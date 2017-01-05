@@ -171,14 +171,17 @@ export default function heatChart(options_override) {
         
       var mainCanvas = outercontainer.append("canvas");
       mainCanvas
-        .attr("width", width)
-        .attr("height", height)
-        .attr("class", "mainplot")
-        .style("width", width + "px")
-        .style("height", height + "px")
-        .style("padding-left", options.margin.left + "px")
-        .style("padding-right", options.margin.right + "px")
-        .style("padding-top", options.margin.top + "px")
+          .attr("width", width)
+          .attr("height", height)
+          .attr("class", "mainplot")
+          .style("position", "absolute")
+          .style("left", "0")
+          .style("top", "0")
+          .style("width", width + "px")
+          .style("height", height + "px")
+          .style("padding-left", options.margin.left + "px")
+          .style("padding-right", options.margin.right + "px")
+          .style("padding-top", options.margin.top + "px")
           
       var container = outercontainer.append("div")
         .attr("class", "heatmap-container")
@@ -189,94 +192,72 @@ export default function heatChart(options_override) {
         .style("display", "inline-block")
         .style("width", innerwidth + "px")
         .style("height", innerheight + "px");
-        
+          
       mainCanvas.call(drawImage);
+                
       chart.mainCanvas = mainCanvas;
       
-      var svg = container.append("svg")
+      var svg = container
+        .append("svg")
+        .attr("width", width + options.margin.left + options.margin.right)
+        .attr("height", height + options.margin.top + options.margin.bottom)
         .attr("class", "mainplot")
         .on("dblclick.resetzoom", resetzoom);
-      svg.append("g")
+        
+      var mainview = svg
+        .append("g")
+          .attr("class", "mainview")
+          .attr("width", width)
+          .attr("height", height)
+          .attr("transform", "translate(" + options.margin.left + "," + options.margin.top + ")")
+                
+      mainview.append("g")
         .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+      mainview
         .append("text")
-        .attr("class", "x axis-label")
+        .attr("transform", "translate(0," + height + ")")
+        .classed("x axis-label", true)
         .attr("x", width/2.0)
         .attr("text-anchor", "middle")
         .attr("y", 35)
-      svg.append("g")
-        .attr("class", "y axis")
+      mainview.append("g")
+        .attr("class", "y axis");
+      mainview
         .append("text")
-        .attr("class", "y axis-label")
-        .attr("text-anchor", "middle")
         .attr("transform", "rotate(-90)")
-        .attr("y", -35 )
-        .attr("x", -height/2)
+        .classed("y axis-label", true)
+        .attr("y", 0 - options.margin.left)
+        .attr("x",0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")   
       
-      svg.append("g")
-        .attr("class", "x grid");           
-      svg.append("g")
+      mainview.append("g")
+        .attr("class", "x grid")
+        .attr("transform", "translate(0," + height + ")");         
+      mainview.append("g")
         .attr("class", "y grid");
-      svg.append("g")
+      mainview.append("g")
         .attr("class", "y interactors")
-      var mainview = svg.append("g")
-        .attr("class", "mainview")
-        .attr("transform", "translate(" + options.margin.left + "," + options.margin.top + ")");  
       
-      svg.select(".x.axis").call(xAxis);
-      svg.select(".y.axis").call(yAxis);
-      svg.select(".x.grid").call(xAxisGrid);
-      svg.select(".y.grid").call(yAxisGrid);
-      svg.select(".x.axis-label").text(options.xlabel);
-      svg.select(".y.axis-label").text(options.ylabel);
+      mainview.append("rect")
+          .attr("class", "zoom box")
+          .attr("width", width)
+          .attr("height", height)
+          .style("visibility", "hidden")
+          .attr("pointer-events", "all")
       
-      svg.attr("width", width + options.margin.left + options.margin.right)
-          .attr("height", height + options.margin.top + options.margin.bottom);
-                
-      svg.selectAll("g.x")
-        .attr("transform", "translate(" + options.margin.left + "," + (height + options.margin.top) + ")");
-      svg.selectAll("g.y")
-        .attr("transform", "translate(" + options.margin.left + "," + options.margin.top + ")"); 
+      mainview.select(".x.axis").call(xAxis);
+      mainview.select(".y.axis").call(yAxis);
+      mainview.select(".x.grid").call(xAxisGrid);
+      mainview.select(".y.grid").call(yAxisGrid);
+      mainview.select(".x.axis-label").text(options.xlabel);
+      mainview.select(".y.axis-label").text(options.ylabel);
         
       chart.svg = svg;
-      //svg.call(zoom); // moved to zoomScroll function
+      chart.mainview = mainview;
       
-      //************************************************************
-      // Position cursor (shows position of mouse in data coords)
-      //************************************************************
-      if (options.position_cursor) {
-        var position_cursor = mainview.selectAll(".position-cursor")
-          .data([0])
-        position_cursor
-          .enter().append("text")
-            .attr("class", "position-cursor")
-            .attr("x", width - 10)
-            .attr("y", height + options.margin.bottom)
-            .style("text-anchor", "end");
-          
-        var follow = function (){  
-          if (source_data == null || source_data[0] == null) { return }
-          var mouse = d3.mouse(mainview.node());
-          var x_coord = x.invert(mouse[0]),
-              y_coord = y.invert(mouse[1]),
-              xdim = source_data[0].length,
-              ydim = source_data.length;
-          var x_bin = Math.floor((x_coord - dims.xmin) / (dims.xmax - dims.xmin) * xdim),
-              y_bin = Math.floor((y_coord - dims.ymin) / (dims.ymax - dims.ymin) * ydim);
-          var z_coord = (x_bin >= 0 && x_bin < xdim && y_bin >= 0 && y_bin < ydim) ? source_data[y_bin][x_bin] : NaN;
-          position_cursor.text(
-            x_coord.toPrecision(5) + 
-            ", " + 
-            y_coord.toPrecision(5) + 
-            ", " + 
-            z_coord.toPrecision(5));
-        }
-          
-          svg
-            .on("mousemove.position_cursor", null)
-            .on("mouseover.position_cursor", null)
-            .on("mousemove.position_cursor", follow)
-            .on("mouseover.position_cursor", follow);
-      }
+      chart.position_cursor(options.position_cursor);
     });
     selection.call(chart.colorbar);
   }
@@ -391,13 +372,13 @@ export default function heatChart(options_override) {
     }
     if (_redraw_main == true) {
       _redraw_main = false;
-      var svg = chart.svg;
+      var mainview = chart.mainview;
       var canvas = chart.mainCanvas;
       var container = chart.outercontainer;
-      svg.select(".x.axis").call(xAxis);
-      svg.select(".y.axis").call(yAxis);
-      svg.select(".grid.x").call(xAxisGrid);
-      svg.select(".grid.y").call(yAxisGrid);
+      mainview.select(".x.axis").call(xAxis);
+      mainview.select(".y.axis").call(yAxis);
+      mainview.select(".grid.x").call(xAxisGrid);
+      mainview.select(".grid.y").call(yAxisGrid);
 
       chart.mainCanvas.call(drawImage);
       
@@ -474,11 +455,55 @@ export default function heatChart(options_override) {
         height = innerheight - options.margin.top - options.margin.bottom;
         
     var limits = fixAspect(width, height);
-      // Update the x-scale.
-      x.domain([limits.xmin, limits.xmax]);
+    // Update the x-scale.
+    x.domain([limits.xmin, limits.xmax]);
+    // Update the y-scale.
+    y.domain([limits.ymin, limits.ymax]);
+    
+    zoom.x(x).y(y);
+    return chart;
+  }
+  
+  chart.position_cursor = function(_) {
+    if (!arguments.length) return options.position_cursor;
+    options.position_cursor = _;
+    if (options.position_cursor) {
+      var svg = chart.svg,
+          mainview = chart.mainview;
+      var position_cursor = mainview.append("text")
+        .attr("class", "position-cursor")
+        .attr("x", parseFloat(mainview.attr("width")) - 10)
+        .attr("y", parseFloat(mainview.attr("height")) + options.margin.bottom)
+        .style("text-anchor", "end");
         
-      // Update the y-scale.
-      y.domain([limits.ymin, limits.ymax]);
+      var follow = function (){  
+        if (source_data == null || source_data[0] == null) { return }
+        var mouse = d3.mouse(mainview.node());
+        var x_coord = x.invert(mouse[0]),
+            y_coord = y.invert(mouse[1]),
+            xdim = source_data[0].length,
+            ydim = source_data.length;
+        var x_bin = Math.floor((x_coord - dims.xmin) / (dims.xmax - dims.xmin) * xdim),
+            y_bin = Math.floor((y_coord - dims.ymin) / (dims.ymax - dims.ymin) * ydim);
+        var z_coord = (x_bin >= 0 && x_bin < xdim && y_bin >= 0 && y_bin < ydim) ? source_data[y_bin][x_bin] : NaN;
+        position_cursor.text(
+          x_coord.toPrecision(5) + 
+          ", " + 
+          y_coord.toPrecision(5) + 
+          ", " + 
+          z_coord.toPrecision(5));
+      }
+        
+        svg
+          .on("mousemove.position_cursor", follow)
+          .on("mouseover.position_cursor", follow);
+    }
+    else {
+      chart.mainview.selectAll(".position-cursor").remove();
+      chart.svg
+        .on("mousemove.position_cursor", null)
+        .on("mouseover.position_cursor", null)
+    }
     return chart;
   }
   
@@ -511,11 +536,12 @@ export default function heatChart(options_override) {
   chart.zoomScroll = function(_) {
     if (!arguments.length) return zoomScroll;
     zoomScroll = _;
+    var zoom_el = chart.svg.select("rect.zoom.box");
     if (zoomScroll == true) {
-      chart.svg.call(zoom).on("dblclick.zoom", null);
+      zoom_el.call(zoom).on("dblclick.zoom", null);
     }
     else if (zoomScroll == false) {
-      chart.svg.on(".zoom", null);
+      zoom_el.on(".zoom", null);
     }
     return chart;
   };
