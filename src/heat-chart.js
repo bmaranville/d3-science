@@ -166,51 +166,44 @@ export default function heatChart(options_override) {
         .tickPadding(10)	
         .tickSubdivide(true)	
         .orient("left");
-        
-        
-      // we will bind data to the container div, a slightly non-standard
-      // arrangement.
-      var container = d3.select(this).selectAll("div.heatmap-container").data([0]);
       
       zoom.x(x).y(y);
-      
-      // if inner container doesn't exist, build it.
-      container.enter().append("div")
+        
+      var mainCanvas = outercontainer.append("canvas");
+      mainCanvas
+        .attr("width", width)
+        .attr("height", height)
+        .attr("class", "mainplot")
+        .style("width", width + "px")
+        .style("height", height + "px")
+        .style("padding-left", options.margin.left + "px")
+        .style("padding-right", options.margin.right + "px")
+        .style("padding-top", options.margin.top + "px")
+          
+      var container = outercontainer.append("div")
         .attr("class", "heatmap-container")
         .attr("width", innerwidth)
         .attr("height", innerheight)
+        //.style("left", "0")
+        //.style("top", "0")
         .style("display", "inline-block")
         .style("width", innerwidth + "px")
         .style("height", innerheight + "px");
         
-      var mainCanvas = container.selectAll("canvas.mainplot").data([0]);
-      mainCanvas.enter().append("canvas");
-      mainCanvas
-          .attr("width", width)
-          .attr("height", height)
-          .attr("class", "mainplot")
-          .style("width", width + "px")
-          .style("height", height + "px")
-          .style("padding-left", options.margin.left + "px")
-          .style("padding-right", options.margin.right + "px")
-          .style("padding-top", options.margin.top + "px")
-          .call(drawImage);
-                
+      mainCanvas.call(drawImage);
       chart.mainCanvas = mainCanvas;
       
-      var svg = container.selectAll("svg.mainplot").data([0]);
-      var esvg = svg.enter()
-        .append("svg")
-          .attr("class", "mainplot")
-          .on("dblclick.resetzoom", resetzoom);
-      esvg.append("g")
+      var svg = container.append("svg")
+        .attr("class", "mainplot")
+        .on("dblclick.resetzoom", resetzoom);
+      svg.append("g")
         .attr("class", "x axis")
         .append("text")
         .attr("class", "x axis-label")
         .attr("x", width/2.0)
         .attr("text-anchor", "middle")
         .attr("y", 35)
-      esvg.append("g")
+      svg.append("g")
         .attr("class", "y axis")
         .append("text")
         .attr("class", "y axis-label")
@@ -219,13 +212,13 @@ export default function heatChart(options_override) {
         .attr("y", -35 )
         .attr("x", -height/2)
       
-      esvg.append("g")
+      svg.append("g")
         .attr("class", "x grid");           
-      esvg.append("g")
+      svg.append("g")
         .attr("class", "y grid");
-      esvg.append("g")
+      svg.append("g")
         .attr("class", "y interactors")
-      var mainview = esvg.append("g")
+      var mainview = svg.append("g")
         .attr("class", "mainview")
         .attr("transform", "translate(" + options.margin.left + "," + options.margin.top + ")");  
       
@@ -278,7 +271,7 @@ export default function heatChart(options_override) {
             z_coord.toPrecision(5));
         }
           
-          esvg
+          svg
             .on("mousemove.position_cursor", null)
             .on("mouseover.position_cursor", null)
             .on("mousemove.position_cursor", follow)
@@ -310,16 +303,14 @@ export default function heatChart(options_override) {
         .tickSubdivide(true)	
         .orient("right");
         
-      // we will bind data to the container div, a slightly non-standard
-      // arrangement.
-      var container = d3.select(this).selectAll("div.colorbar-container").data([0]);
+      var container = d3.select(this);
      
       cb_zoom.y(z);
       chart.colorbar.resetzoom = cb_resetzoom;
       chart.colorbar.zoom = cb_zoom;
       
-      // if inner container doesn't exist, build it.
-      container.enter().append("div")
+      var colorbarCanvas;
+      var container = outercontainer.append("div")
         .attr("class", "colorbar-container")
         .attr("width", innerwidth)
         .attr("height", innerheight)
@@ -327,30 +318,28 @@ export default function heatChart(options_override) {
         .style("width", innerwidth + "px")
         .style("height", innerheight + "px");
         
-      var colorbarCanvas = container.selectAll("canvas.colorbar").data([0]);
-      colorbarCanvas.enter().append("canvas");
-      colorbarCanvas
-          .attr("width", width)
-          .attr("height", height)
-          .attr("class", "colorbar")
-          .style("width", width + "px")
-          .style("height", height + "px")
-          .style("padding-left", offset_left + "px")
-          .style("padding-right", options.cb_margin.right + "px")
-          .style("padding-top", options.cb_margin.top + "px")
-          .call(drawScale);
+      var colorbarCanvas = container.append("canvas")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("class", "colorbar")
+        .style("width", width + "px")
+        .style("height", height + "px")
+        .style("padding-left", offset_left + "px")
+        .style("padding-right", options.cb_margin.right + "px")
+        .style("padding-top", options.cb_margin.top + "px")
+
+      colorbarCanvas.call(drawScale);
                 
       chart.colorbar.colorbarCanvas = colorbarCanvas;
       
-      var svg = container.selectAll("svg.colorbar").data([0]);
-      var esvg = svg.enter()
+      var svg = container
         .append("svg")
           .attr("class", "colorbar")
           .call(cb_zoom)
           .on("dblclick.zoom", null)
           .on("dblclick.resetzoom", null)
           .on("dblclick.resetzoom", cb_resetzoom);
-      esvg.append("g")
+      svg.append("g")
           .attr("class", "z axis");
     
       svg.select(".z.axis").call(zAxis);
@@ -364,7 +353,7 @@ export default function heatChart(options_override) {
       chart.colorbar.svg = svg;
     });
   }
-  chart.colorbar.update = function() { this.outercontainer.call(chart.colorbar); };   
+  chart.colorbar.update = function() { chart.colorbar.colorbarCanvas.call(drawScale); _redraw_colorbar = true; };   
   
   chart.colormap=function(_) {
     if (!arguments.length) return colormap;
@@ -419,6 +408,8 @@ export default function heatChart(options_override) {
   
   window.requestAnimationFrame(chart.redrawLoop);
   
+  chart.update = function() { _redraw_main = true; return chart }
+  
   chart.margin = function(_) {
     if (!arguments.length) return options.margin;
     options.margin = _;
@@ -469,6 +460,25 @@ export default function heatChart(options_override) {
     if (chart.svg && chart.svg.select) {
       chart.svg.select(".y.axis .y.axis-label").text(_);
     }
+    return chart;
+  }
+  
+  chart.aspect_ratio = function(_) {
+    if (!arguments.length) return options.aspect_ratio;
+    options.aspect_ratio = _;
+    var offset_right = (options.show_colorbar) ? options.colorbar_width + 5 : 0;
+    var outercontainer = this.outercontainer,
+        innerwidth = outercontainer.node().clientWidth - offset_right,
+        innerheight = outercontainer.node().clientHeight,
+        width = innerwidth - options.margin.right - options.margin.left,
+        height = innerheight - options.margin.top - options.margin.bottom;
+        
+    var limits = fixAspect(width, height);
+      // Update the x-scale.
+      x.domain([limits.xmin, limits.xmax]);
+        
+      // Update the y-scale.
+      y.domain([limits.ymin, limits.ymax]);
     return chart;
   }
   
