@@ -1,7 +1,7 @@
 "use strict";
 import * as d3 from 'd3';
 import {event as currentEvent} from 'd3';
-import {extend} from './jquery-extend';
+import {extend, type} from './jquery-extend';
 
   
 if (!d3.hasOwnProperty("id")) {
@@ -33,8 +33,8 @@ export default function heatChart(options_override) {
       zmax: 100.0
     }
   }
-  var options = jQuery.extend(true, {}, options_defaults); // copy
-  jQuery.extend(true, options, options_override); // process any overrides from creation;
+  var options = extend(true, {}, options_defaults); // copy
+  extend(true, options, options_override); // process any overrides from creation;
   
   //var zoomRect = false;
   var zoomScroll = false;
@@ -480,8 +480,8 @@ export default function heatChart(options_override) {
       chart[attr] = (function(attr) {     
         var accessor = function(_) {
           if (!arguments.length) return options[attr];
-          if (jQuery.type(options[attr]) == "object") {
-            jQuery.extend(options[attr], _); 
+          if (type(options[attr]) == "object") {
+            extend(options[attr], _); 
           } else {
             options[attr] = _;
           }
