@@ -56,8 +56,9 @@ function polygonInteractor(state, x, y) {
         .attr("cx", function(d) { return x(d[0]); })
         .attr("cy", function(d) { return y(d[1]); });
       corners.exit().remove();
-        
-      var edges = edge_group.selectAll('.edge').data([state.points]);
+      
+      var edge_data = (state.close_path) ?  state.points.concat(state.points[0]) : state.points;
+      var edges = edge_group.selectAll('.edge').data([edge_data]);
       edges.enter().append("path")
         .classed("edge", true)
         .attr("side", function(d,i) { return i.toFixed()})        

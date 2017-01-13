@@ -129,6 +129,7 @@ rect.zoom {
   <script src="../lib/ellipse-interactor.js"></script>
   <script src="../lib/angle-slice-interactor.js"></script>
   <script src="../lib/x-slice-interactor.js"></script>
+  <script src="../lib/polygon-interactor.js"></script>
 </head>
 <body>
 <!--<script src="d3.v3.min.js"></script>-->
@@ -202,6 +203,23 @@ window.onload = function() {
     x2: 0.025
   }
   
+  var opts_poly = { 
+    type:'Polygon',
+    radius: 5, 
+    name:'roi_polygon',
+    color1: 'purple',
+    color2: 'LightOrange',
+    interpolation: 'linear',
+    prevent_crossing: false,
+    show_points: true,
+    show_lines: true,
+    close_path: true,
+    fill: "none",
+    //showcenter: true,
+    //show: true,
+    points: [[0.021,0], [0.0215,15],[0.023, 50], [0.02, 40], [0.0205,10]]
+  }
+  
   d3.json("sample_data/pbr_live_data.json", function(error, data) {
       mydata = data;
       c = d3.select("#plot1")
@@ -212,6 +230,7 @@ window.onload = function() {
       ellipse_2 = new ellipseInteractor.default(opts3);
       angle_slice = new angleSliceInteractor.default(opts4);
       x_slice = new xSliceInteractor.default(optsx);
+      polygon = new polygonInteractor.default(opts_poly);
       chart
         .options(data[0].options)
         .interactors(x_slice)
@@ -219,6 +238,7 @@ window.onload = function() {
         .interactors(ellipse_1)
         .interactors(ellipse_2)
         .interactors(angle_slice)
+        .interactors(polygon)
         .zoomRect(true)
 
   });
