@@ -62,7 +62,7 @@ function polygonInteractor(state, x, y) {
         .attr("visibility", (state.show_points) ? "visible" : "hidden");
       corners.exit().remove();
       
-      var edge_data = (state.close_path) ?  state.points.concat([state.points[0]]) : state.points;
+      var edge_data = (state.close_path && state.points.length > 1) ?  state.points.concat([state.points[0]]) : state.points;
       var edges = edge_group.selectAll('.edge').data([edge_data]);  
       edges.enter().append("path")
         .classed("edge", true)
