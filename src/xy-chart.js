@@ -20,8 +20,6 @@ function xyChart(options_override) {
     position_cursor: true,
     vcursor: false,
     hcursor: false,
-    xlabel: "x-axis",
-    ylabel: "y-axis",
     zlabel: "z-axis",
     errorbar_width: 12,
     xtransform: "linear",
@@ -548,8 +546,8 @@ function xyChart(options_override) {
       var svg = chart.svg;
       svg.select(".x.axis").call(xAxis);
       svg.select(".y.axis").call(yAxis); 
-      svg.select(".x.axis .x.axis-label").text(options.axes.xaxis.label);
-      svg.select(".y.axis .y.axis-label").text(options.axes.yaxis.label);
+      svg.select(".x.axis .x.axis-label").html(options.axes.xaxis.label);
+      svg.select(".y.axis .y.axis-label").html(options.axes.yaxis.label);
       svg.select(".x.grid").call(xAxisGrid);
       svg.select(".y.grid").call(yAxisGrid);
       svg.selectAll("rect.zoom").remove();
