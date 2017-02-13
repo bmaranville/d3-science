@@ -323,8 +323,8 @@ function xyChart(options_override) {
       axes.select(".y.axis").call(yAxis);
       axes.select(".x.grid").call(xAxisGrid);
       axes.select(".y.grid").call(yAxisGrid);
-      axes.select(".x.axis-label").text(((options.axes || {}).xaxis || {}).label || "x-axis");
-      axes.select(".y.axis-label").text(((options.axes || {}).yaxis || {}).label || "y-axis");
+      axes.select(".x.axis-label").html(((options.axes || {}).xaxis || {}).label || "x-axis");
+      axes.select(".y.axis-label").html(((options.axes || {}).yaxis || {}).label || "y-axis");
       
       svg.attr("width", width + options.margin.left + options.margin.right)
           .attr("height", height + options.margin.top + options.margin.bottom);

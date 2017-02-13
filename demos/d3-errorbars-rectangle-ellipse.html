@@ -79,13 +79,7 @@ canvas {
     -moz-user-select: none;
 }
 
-.axis-label tspan.sub {
-    baseline-shift: -50%;
-    font-size: 50%;
-}
-
-.axis-label tspan.sup {
-    baseline-shift: 75%;
+text.axis-label tspan.sub, text.axis-label tspan.sup {
     font-size: 50%;
 }
 
@@ -262,7 +256,7 @@ window.onload = function() {
         .interactors(polygon)
         .interactors(functional)
         .zoomRect(true)
-
+      chart.options({axes: {xaxis: {label: 'Q<tspan dy="2" class="sub">efgh</tspan><tspan dx="-2em" dy="-10" class="sub">1234abcg</tspan>'}}}).update()
   });
 }
 // chart.target_ratio(1).update(); // changes aspect ratio!
