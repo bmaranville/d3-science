@@ -494,7 +494,7 @@ export default function heatChart(options_override) {
           ", " + 
           y_coord.toPrecision(5) + 
           ", " + 
-          z_coord.toPrecision(5));
+          parseFloat(z_coord).toPrecision(5));
       }
         
         svg
