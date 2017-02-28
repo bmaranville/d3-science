@@ -219,11 +219,13 @@ function heatChart(options_override) {
         .attr("class", "x grid");           
       esvg.append("g")
         .attr("class", "y grid");
-      esvg.append("g")
-        .attr("class", "y interactors")
+      
       var mainview = esvg.append("g")
         .attr("class", "mainview")
-        .attr("transform", "translate(" + options.margin.left + "," + options.margin.top + ")");  
+        .attr("transform", "translate(" + options.margin.left + "," + options.margin.top + ")");
+        
+      esvg.append("g")
+        .attr("class", "interactor-layer")
       
       svg.select(".x.axis").call(xAxis);
       svg.select(".y.axis").call(yAxis);
@@ -537,10 +539,18 @@ function heatChart(options_override) {
   
   chart.interactors = function(_) {
     if (!arguments.length) return interactors;
-    chart.svg.select("g.interactors").call(_);
-    _.x(x).y(y).update();
-    interactors.push(_);
-    return chart;
+    if ( _ == null ) {
+      // null passed intentionally: clear all
+      chart.svg.selectAll("g.interactor-layer g.interactors").remove();
+      interactors = [];
+      return chart;
+    }
+    else {
+      chart.svg.select("g.interactor-layer").call(_);
+      _.x(x).y(y).update();
+      interactors.push(_);
+      return chart;
+    }
   };
   
   chart.destroy = function() {

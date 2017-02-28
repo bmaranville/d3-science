@@ -192,9 +192,9 @@ export default function heatChart(options_override) {
           .style("top", "0")
           .style("width", width + "px")
           .style("height", height + "px")
-          .style("padding-left", options.margin.left + "px")
-          .style("padding-right", options.margin.right + "px")
-          .style("padding-top", options.margin.top + "px")    
+          .style("margin-left", options.margin.left + "px")
+          .style("margin-right", options.margin.right + "px")
+          .style("margin-top", options.margin.top + "px")    
       mainCanvas.call(drawImage);
                 
       chart.mainCanvas = mainCanvas;
