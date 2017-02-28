@@ -178,6 +178,7 @@ export default function heatChart(options_override) {
         //.style("left", "0")
         //.style("top", "0")
         .style("display", "inline-block")
+        .style("position", "relative")
         .style("width", innerwidth + "px")
         .style("height", innerheight + "px");
       
@@ -189,7 +190,7 @@ export default function heatChart(options_override) {
           .attr("class", "mainplot")
           .style("position", "absolute")
           .style("left", options.margin.left + "px")
-          .style("top", options.margin.left + "px")
+          .style("top", options.margin.top + "px")
           .style("width", width + "px")
           .style("height", height + "px")
           //.style("margin-left", options.margin.left + "px")
