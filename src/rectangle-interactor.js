@@ -55,7 +55,7 @@ function rectangleInteractor(state, x, y) {
   }
   
   var state_to_center = function(state) {
-    if (show_center) {
+    if (state.show_center) {
       return [
         [x.invert((x(state.xmax) + x(state.xmin)) / 2.0),
          y.invert((y(state.ymax) + y(state.ymin)) / 2.0)]
