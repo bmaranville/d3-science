@@ -188,13 +188,13 @@ export default function heatChart(options_override) {
           .attr("height", height)
           .attr("class", "mainplot")
           .style("position", "absolute")
-          .style("left", "0")
-          .style("top", "0")
+          .style("left", options.margin.left + "px")
+          .style("top", options.margin.left + "px")
           .style("width", width + "px")
           .style("height", height + "px")
-          .style("margin-left", options.margin.left + "px")
-          .style("margin-right", options.margin.right + "px")
-          .style("margin-top", options.margin.top + "px")    
+          //.style("margin-left", options.margin.left + "px")
+          //.style("margin-right", options.margin.right + "px")
+          //.style("margin-top", options.margin.top + "px")    
       mainCanvas.call(drawImage);
                 
       chart.mainCanvas = mainCanvas;
