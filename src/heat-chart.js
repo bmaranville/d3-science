@@ -451,7 +451,7 @@ export default function heatChart(options_override) {
     if (!arguments.length) return options.aspect_ratio;
     options.aspect_ratio = _;
     var offset_right = (options.show_colorbar) ? options.colorbar_width + 5 : 0;
-    var outercontainer = this.outercontainer,
+    var outercontainer = chart.outercontainer,
         innerwidth = outercontainer.node().clientWidth - offset_right,
         innerheight = outercontainer.node().clientHeight,
         width = innerwidth - options.margin.right - options.margin.left,
