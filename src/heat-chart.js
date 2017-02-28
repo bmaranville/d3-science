@@ -20,8 +20,10 @@ export default function heatChart(options_override) {
     numberOfTicks: 4,
     aspect_ratio: null,
     autoscale: false,
-    xlabel: "x-axis",
-    ylabel: "y-axis",
+    axes: {
+      xaxis: {label: "x-axis"},
+      yaxis: {label: "y-axis"}
+    },
     zlabel: "z-axis",
     ztransform: "linear", 
     dims: {
@@ -380,6 +382,8 @@ export default function heatChart(options_override) {
       var container = chart.outercontainer;
       mainview.select(".x.axis").call(xAxis);
       mainview.select(".y.axis").call(yAxis);
+      mainview.select(".x.axis .x.axis-label").html(options.axes.xaxis.label);
+      mainview.select(".y.axis .y.axis-label").html(options.axes.yaxis.label);
       mainview.select(".grid.x").call(xAxisGrid);
       mainview.select(".grid.y").call(yAxisGrid);
 
@@ -430,7 +434,7 @@ export default function heatChart(options_override) {
       options.axes.xaxis.label = _;
     }
     if (chart.svg && chart.svg.select) {
-      chart.svg.select(".x.axis .x.axis-label").text(_);
+      chart.svg.select(".x.axis .x.axis-label").html(_);
     }
     return chart;
   }
@@ -442,7 +446,7 @@ export default function heatChart(options_override) {
       options.axes.yaxis.label = _;
     }
     if (chart.svg && chart.svg.select) {
-      chart.svg.select(".y.axis .y.axis-label").text(_);
+      chart.svg.select(".y.axis .y.axis-label").html(_);
     }
     return chart;
   }
@@ -509,6 +513,16 @@ export default function heatChart(options_override) {
     }
     return chart;
   }
+  
+  chart.options = function(_, clear) {
+    if (!arguments.length) return options;
+    if (clear) {
+      options = extend(true, {}, options_defaults, _);
+    } else {
+      extend(true, options, _);
+    }
+    return chart;
+  };
   
   // drop all the other options into the chart namespace,
   // making objects update rather than overwrite
