@@ -169,7 +169,20 @@ export default function heatChart(options_override) {
       
       zoom.x(x).y(y);
         
-      var mainCanvas = outercontainer.append("canvas");
+      
+          
+      var container = outercontainer.append("div")
+        .attr("class", "heatmap-container")
+        .attr("width", innerwidth)
+        .attr("height", innerheight)
+        //.style("left", "0")
+        //.style("top", "0")
+        .style("display", "inline-block")
+        .style("width", innerwidth + "px")
+        .style("height", innerheight + "px");
+      
+      
+      var mainCanvas = container.append("canvas");
       mainCanvas
           .attr("width", width)
           .attr("height", height)
@@ -181,18 +194,7 @@ export default function heatChart(options_override) {
           .style("height", height + "px")
           .style("padding-left", options.margin.left + "px")
           .style("padding-right", options.margin.right + "px")
-          .style("padding-top", options.margin.top + "px")
-          
-      var container = outercontainer.append("div")
-        .attr("class", "heatmap-container")
-        .attr("width", innerwidth)
-        .attr("height", innerheight)
-        //.style("left", "0")
-        //.style("top", "0")
-        .style("display", "inline-block")
-        .style("width", innerwidth + "px")
-        .style("height", innerheight + "px");
-          
+          .style("padding-top", options.margin.top + "px")    
       mainCanvas.call(drawImage);
                 
       chart.mainCanvas = mainCanvas;
