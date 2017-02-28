@@ -238,7 +238,7 @@ export default function heatChart(options_override) {
       mainview.append("g")
         .attr("class", "y grid");
       mainview.append("g")
-        .attr("class", "y interactors")
+        .attr("class", "interactor-layer")
       
       mainview.append("rect")
           .attr("class", "zoom box")
@@ -577,10 +577,18 @@ export default function heatChart(options_override) {
   
   chart.interactors = function(_) {
     if (!arguments.length) return interactors;
-    chart.svg.select("g.interactors").call(_);
-    _.x(x).y(y).update();
-    interactors.push(_);
-    return chart;
+    if ( _ == null ) {
+      // null passed intentionally: clear all
+      chart.svg.selectAll("g.interactor-layer g.interactors").remove();
+      interactors = [];
+      return chart;
+    }
+    else {
+      chart.svg.select("g.interactor-layer").call(_);
+      _.x(x).y(y).update();
+      interactors.push(_);
+      return chart;
+    }
   };
   
   chart.destroy = function() {

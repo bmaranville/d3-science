@@ -747,10 +747,18 @@ function xyChart(options_override) {
     
     chart.interactors = function(_) {
       if (!arguments.length) return interactors;
-      chart.svg.select("g.mainview").call(_);
-      _.x(x).y(y).update();
-      interactors.push(_);
-      return chart;
+      if ( _ == null ) {
+        // null passed intentionally: clear all
+        chart.svg.selectAll("g.interactors").remove();
+        interactors = [];
+        return chart;
+      }
+      else {
+        chart.svg.select("g.mainview").call(_);
+        _.x(x).y(y).update();
+        interactors.push(_);
+        return chart;
+      }
     };
     
     chart.export_svg = function() {
