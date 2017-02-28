@@ -237,8 +237,7 @@ export default function heatChart(options_override) {
         .attr("transform", "translate(0," + height + ")");         
       mainview.append("g")
         .attr("class", "y grid");
-      mainview.append("g")
-        .attr("class", "interactor-layer")
+      
       
       mainview.append("rect")
           .attr("class", "zoom box")
@@ -246,6 +245,9 @@ export default function heatChart(options_override) {
           .attr("height", height)
           .style("visibility", "hidden")
           .attr("pointer-events", "all")
+          
+      mainview.append("g")
+        .attr("class", "interactor-layer")
       
       mainview.select(".x.axis").call(xAxis);
       mainview.select(".y.axis").call(yAxis);
