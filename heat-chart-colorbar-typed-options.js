@@ -226,6 +226,7 @@ function heatChart(options_override) {
         
       esvg.append("g")
         .attr("class", "interactor-layer")
+        .attr("transform", "translate(" + options.margin.left + "," + options.margin.top + ")");
       
       svg.select(".x.axis").call(xAxis);
       svg.select(".y.axis").call(yAxis);

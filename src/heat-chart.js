@@ -222,7 +222,7 @@ export default function heatChart(options_override) {
           .attr("class", "x axis-label")
           .attr("x", width/2.0)
           .attr("text-anchor", "middle")
-          .attr("y", options.margin.bottom - 15)
+          .attr("y", options.margin.bottom - 5)
       mainview.append("g")
         .attr("class", "y axis")
         .append("text")
