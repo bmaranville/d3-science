@@ -56,6 +56,39 @@ svg {
 .input.label, .output.label {
     display: none;
 }
+
+/* styles for dataflow editor */
+
+g.module rect {
+  stroke-width: 2px;
+  stroke: blue;
+  cursor: move;
+  fill: white;
+}
+
+g.module rect.terminal { 
+  cursor: crosshair;
+}
+
+rect.terminal.output {
+  fill: #88FFFF;
+}
+
+rect.terminal.input {
+  fill:  #88FF88;
+}
+
+path.wire {
+  fill: none;
+  stroke-width: 5px;
+  stroke: red;
+  cursor: crosshair;
+}
+
+polygon.terminal.state {
+  display: none;
+}
+
 </style>
 <body>
 <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
