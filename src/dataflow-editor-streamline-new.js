@@ -382,9 +382,6 @@ function editor(data) {
       .attr("x-origin", module_data.x.toFixed())
       .attr("y-origin", module_data.y.toFixed())
       
-      var title = group.append("g")
-        .classed("title", true)
-      
       var width = 75 + (padding * 2);
       var height = 20 + padding * 2;
         
@@ -446,6 +443,9 @@ function editor(data) {
       outputs.append("polygon")
           .classed("terminal input state", true)
           .attr("points", "0,0 20," + (height/2).toFixed() + " 0," + height.toFixed())    
+      
+      var title = group.append("g")
+        .classed("title", true)
       
       var titleborder = title.append("rect")
         .classed("title border", true)
