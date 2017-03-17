@@ -432,10 +432,14 @@ function xyChart(options_override) {
               .attr("height", 10)
               .style("fill", get_series_color(null, i))
               .on("mouseover", function() {
-                chart.svg.selectAll('path.line').classed('highlight', function(d,ii) {return ii == i});
+                chart.svg.selectAll('path.line')
+                  .classed('highlight', function(d,ii) {return ii == i})
+                  .classed('unhighlight', function(d,ii) {return ii != i});
               })
               .on("mouseout", function() {
-                chart.svg.selectAll('path.line').classed('highlight', false);
+                chart.svg.selectAll('path.line')
+                  .classed('highlight', false)
+                  .classed('unhighlight', false);
               });
             
             g.append("text")
@@ -446,10 +450,14 @@ function xyChart(options_override) {
               .style("text-anchor", "start")
               .style("fill", get_series_color(null, i))
               .on("mouseover", function() {
-                chart.svg.selectAll('path.line').classed('highlight', function(d,ii) {return ii == i});
+                chart.svg.selectAll('path.line')
+                  .classed('highlight', function(d,ii) {return ii == i})
+                  .classed('unhighlight', function(d,ii) {return ii != i});
               })
               .on("mouseout", function() {
-                chart.svg.selectAll('path.line').classed('highlight', false);
+                chart.svg.selectAll('path.line')
+                  .classed('highlight', false)
+                  .classed('unhighlight', false);
               });
           });
       update_sel.exit().remove();
