@@ -1,3 +1,10 @@
+"use strict";
+
+import * as d3 from "d3";
+import {event as currentEvent} from 'd3';
+
+export default rectangleSelect;
+
 function rectangleSelect(drag, x, y) {
   // x, y are d3.scale objects (linear, log, etc) from parent
   // dispatch is the d3 event dispatcher: should have event "update" register
