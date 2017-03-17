@@ -65,7 +65,7 @@ function rectangleSelect(drag, x, y) {
             }
             rect.remove();
           }, true);
-        d3.event.sourceEvent.stopPropagation();
+        currentEvent.sourceEvent.stopPropagation();
       });
         
     // fire!
