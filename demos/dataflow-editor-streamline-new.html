@@ -66,6 +66,10 @@ g.module rect {
   fill: white;
 }
 
+g.module rect.title {
+  fill-opacity: 0;
+}
+
 g.module rect.terminal { 
   cursor: crosshair;
 }
@@ -108,7 +112,7 @@ var x0 = 150,
 
 var module_opts = [
 {
-      "title": "load spec",
+      "title": "load spec long title",
       "module": "ncnr.refl.super_load",
       "config": {
         "intent": "specular"
@@ -243,7 +247,7 @@ function expand_module_defs(modules, instrument) {
   return output
 }
 
-e = new dataflowEditorStreamlineNew.editor();
+e = new dataflowEditorStreamlineNew.editor(null, true);
 e.module_defs(instruments[current_instrument].modules);
 e.data([{modules: [], wires: []}]);
 d3.select("#editor_div").call(e);
