@@ -84,12 +84,12 @@ window.onload = function() {
     .xlabel("Qx (\u212B\u207B\u00B9)")
     .ylabel("Qz (\u212B\u207B\u00B9)");
     
-
   d3.json("sample_data/512.json", function(error, heatmap) {
       //mydata = heatmap;
       c = d3.select("#plot1")
         .data([heatmap])
         .call(chart);
+      chart.zoomScroll(true);
   });
 }
 // chart.target_ratio(1).update(); // changes aspect ratio!
