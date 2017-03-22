@@ -48,8 +48,8 @@ function xyChart(options_override) {
   var zoomed = false; // zoomed state.
     
   var labels = options.series.map(function(d, i) { return d.label || i });
-  var x = d3.scale[options.xtransform]();
-  var y = d3.scale[options.ytransform]();
+  var x = getScale(options.xtransform);
+  var y = getScale(options.ytransform);
   var xAxis = d3.svg.axis(),
       yAxis = d3.svg.axis(),
       xAxisGrid = d3.svg.axis(),
@@ -728,7 +728,7 @@ function xyChart(options_override) {
       options.xtransform = _;
       var old_range = x.range(),
           old_domain = x.domain();
-      x = d3.scale[options.xtransform]()
+      x = getScale(options.xtransform);
       do_autoscale();
       x.domain([min_x, max_x]).range(old_range);
       xAxis.scale(x);
@@ -743,7 +743,7 @@ function xyChart(options_override) {
       options.ytransform = _;
       var old_range = y.range(),
           old_domain = y.domain();
-      y = d3.scale[options.ytransform]()
+      y = getScale(options.ytransform);
       do_autoscale();
       y.domain([min_y, max_y]).range(old_range);
       yAxis.scale(y);
@@ -829,4 +829,8 @@ function xyChart(options_override) {
     chart.type = "xy";
     
     return chart;
+}
+
+function getScale(scalename) {
+  return d3.scale[scalename]();
 }
