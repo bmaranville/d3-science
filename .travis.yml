@@ -28,6 +28,6 @@ after_success:
               "  LogLevel ERROR" >> ~/.ssh/config
 
 before_script:
-  - npm install -g babel-cli babel-preset-es2015 babel-preset-latest 
-  - npm install babel-plugin-transform-es2015-modules-umd
+  - npm install -g babel-cli
+  - npm install babel-preset-es2015 babel-preset-latest babel-plugin-transform-es2015-modules-umd
 script: make
