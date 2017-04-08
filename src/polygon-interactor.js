@@ -16,9 +16,6 @@ function polygonInteractor(state, x, y) {
   var y = y || d3.scale.linear();
   var interpolation = (state.interpolation == null) ? 'linear' : state.interpolation;
   var prevent_crossing = (state.prevent_crossing == null) ? false : state.prevent_crossing;
-  var show_points = (state.show_points == null) ? true : state.show_points;
-  var show_lines = (state.show_lines == null) ? true : state.show_lines;
-  var close_path = (state.close_path == null) ? false : state.close_path;
   var fixed = (state.fixed == null) ? false : state.fixed;
   var cursor = (fixed) ? "auto" : "move";
 

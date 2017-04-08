@@ -10,7 +10,6 @@ function monotonicFunctionInteractor(state, x, y) {
   // dispatch is the d3 event dispatcher: should have event "update" register
   //var state = options;
   var name = state.name;
-  var radius = ( state.radius == null ) ? 5 : state.radius;
   var event_name = "functional." + state.name;
   var dispatch = d3.dispatch("update");
   var x = x || d3.scale.linear();
