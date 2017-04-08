@@ -21,7 +21,7 @@ SHA=`git rev-parse --verify HEAD`
 git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
 
 # we're only going to update the compiled parts, which aren't in master...
-git merge $SOURCE_BRANCH
+git checkout $SOURCE_BRANCH -- src
 
 # Run our compile script
 make
