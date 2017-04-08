@@ -30,4 +30,4 @@ after_success:
 before_script:
   - npm install -g babel-cli
   - npm install babel-preset-es2015 babel-preset-latest babel-plugin-transform-es2015-modules-umd
-script: deploy.sh
+script: bash ./deploy.sh
