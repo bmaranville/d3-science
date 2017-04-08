@@ -18,6 +18,7 @@ SHA=`git rev-parse --verify HEAD`
 
 # Clone the existing gh-pages for this repo
 # Create a new empty branch if gh-pages doesn't exist yet (should only happen on first deply)
+git fetch --all
 git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
 
 # we're only going to update the compiled parts, which aren't in master...
