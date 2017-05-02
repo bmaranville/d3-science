@@ -404,11 +404,15 @@ function editor(data, autosize_modules) {
       var inputs = group.selectAll(".input")
         .data(input_terminals)
         .enter().append("g")
+          .classed("terminals", true)
+          .classed("input", true)
           .attr("transform", function(d,i) { return "translate(-20," + (height * i).toFixed() + ")"})
       
       var outputs = group.selectAll(".output")
         .data(output_terminals)
         .enter().append("g")
+          .classed("terminals", true)
+          .classed("output", true)
           .attr("transform", function(d,i) { return "translate(" + width.toFixed() + "," + (height * i).toFixed() + ")"})
         
       
