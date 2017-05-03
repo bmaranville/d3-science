@@ -401,18 +401,18 @@ function editor(data, autosize_modules) {
         width = Math.max(text_width, width);
       }
         
-      var inputs = group.selectAll(".input")
+      var inputs = group.selectAll(".inputs")
         .data(input_terminals)
         .enter().append("g")
           .classed("terminals", true)
-          .classed("input", true)
+          .classed("inputs", true)
           .attr("transform", function(d,i) { return "translate(-20," + (height * i).toFixed() + ")"})
       
-      var outputs = group.selectAll(".output")
+      var outputs = group.selectAll(".outputs")
         .data(output_terminals)
         .enter().append("g")
           .classed("terminals", true)
-          .classed("output", true)
+          .classed("outputs", true)
           .attr("transform", function(d,i) { return "translate(" + width.toFixed() + "," + (height * i).toFixed() + ")"})
         
       
