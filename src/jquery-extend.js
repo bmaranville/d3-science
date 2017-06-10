@@ -20,7 +20,7 @@ var toString = Object.prototype.toString,
       "[object RegExp]": "regexp",
       "[object Object]": "object"
     };
-    
+
 function type(obj) {
   return obj == null ? String(obj) : class2type[toString.call(obj)] || "object"
 }

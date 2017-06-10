@@ -1,5 +1,7 @@
 "use strict";
+
 import * as d3 from "d3";
+import {event as currentEvent} from 'd3';
 
 export default rectangleInteractor;
 
@@ -11,15 +13,15 @@ function rectangleInteractor(state, x, y) {
   var radius = ( state.radius == null ) ? 5 : state.radius;
   var event_name = "rectangle." + state.name;
   var dispatch = d3.dispatch("update");
-  var x = x || d3.scaleLinear();
-  var y = y || d3.scaleLinear();
+  var x = x || d3.scale.linear();
+  var y = y || d3.scale.linear();
   var show_points = (state.show_points == null) ? true : state.show_points;
   var show_lines = (state.show_lines == null) ? true : state.show_lines;
   var show_center = (state.show_center == null) ? true : state.show_center;
   var fixed = (state.fixed == null) ? false : state.fixed;
   var cursor = (fixed) ? "auto" : "move";
 
-  var line = d3.line()
+  var line = d3.svg.line()
     .x(function(d) { return x(d[0]); })
     .y(function(d) { return y(d[1]); });
          
@@ -53,7 +55,7 @@ function rectangleInteractor(state, x, y) {
   }
   
   var state_to_center = function(state) {
-    if (show_center) {
+    if (state.show_center) {
       return [
         [x.invert((x(state.xmax) + x(state.xmin)) / 2.0),
          y.invert((y(state.ymax) + y(state.ymin)) / 2.0)]
@@ -64,17 +66,17 @@ function rectangleInteractor(state, x, y) {
     }
   }
   
-  var drag_corner = d3.drag()
+  var drag_corner = d3.behavior.drag()
     .on("drag", dragmove_corner)
-    .on("start", function() { d3.event.sourceEvent.stopPropagation(); });
+    .on("dragstart", function() { currentEvent.sourceEvent.stopPropagation(); });
   
-  var drag_center = d3.drag()
+  var drag_center = d3.behavior.drag()
     .on("drag", dragmove_center)
-    .on("start", function() { d3.event.sourceEvent.stopPropagation(); });  
+    .on("dragstart", function() { currentEvent.sourceEvent.stopPropagation(); });  
     
-  var drag_edge = d3.drag()
+  var drag_edge = d3.behavior.drag()
     .on("drag", dragmove_edge)
-    .on("start", function() { d3.event.sourceEvent.stopPropagation(); });
+    .on("dragstart", function() { currentEvent.sourceEvent.stopPropagation(); });
   
 
   function interactor(selection) {
@@ -133,21 +135,21 @@ function rectangleInteractor(state, x, y) {
         .attr("d", line);
         
       // fire!
-      dispatch.call("update");
+      dispatch.update();
     }
   }
   
   function dragmove_center() {
-    state.xmin = x.invert(x(state.xmin) + d3.event.dx);
-    state.xmax = x.invert(x(state.xmax) + d3.event.dx);
-    state.ymin = y.invert(y(state.ymin) + d3.event.dy);
-    state.ymax = y.invert(y(state.ymax) + d3.event.dy);
+    state.xmin = x.invert(x(state.xmin) + currentEvent.dx);
+    state.xmax = x.invert(x(state.xmax) + currentEvent.dx);
+    state.ymin = y.invert(y(state.ymin) + currentEvent.dy);
+    state.ymax = y.invert(y(state.ymax) + currentEvent.dy);
     interactor.update();
   }
   
   function dragmove_corner(d) {
-    var new_x = x.invert(d3.event.x),
-        new_y = y.invert(d3.event.y);
+    var new_x = x.invert(currentEvent.x),
+        new_y = y.invert(currentEvent.y);
     var vertex = parseInt(d3.select(this).attr("vertex"));  
     // enforce relationship between corners:
     switch (vertex) {
@@ -168,14 +170,14 @@ function rectangleInteractor(state, x, y) {
         state.ymax = new_y;
         break
       default:
-        console.log("default", d3.event, d3.select(this));
+        console.log("default", currentEvent, d3.select(this));
     }
     interactor.update();
   }
   
   function dragmove_edge() {
-    var new_x = x.invert(d3.event.x),
-        new_y = y.invert(d3.event.y);
+    var new_x = x.invert(currentEvent.x),
+        new_y = y.invert(currentEvent.y);
     var side = parseInt(d3.select(this).attr("side"));
     // enforce relationship between edges and corners:
     switch (side) {
@@ -192,7 +194,7 @@ function rectangleInteractor(state, x, y) {
         state.xmin = new_x;
         break
       default:
-        console.log("default", d3.event, d3.select(this));
+        console.log("default", currentEvent, d3.select(this));
     }
     interactor.update();
   }

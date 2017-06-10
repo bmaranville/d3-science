@@ -1,5 +1,6 @@
 "use strict";
 import * as d3 from 'd3';
+import {event as currentEvent} from 'd3';
 import {extend} from './jquery-extend';
 
 export default profileInteractor;
@@ -12,9 +13,9 @@ function profileInteractor(state, x, y) {
   var radius = ( state.radius == null ) ? 5 : state.radius;
   var event_name = "profile." + state.name;
   var dispatch = d3.dispatch("update","changed");
-  var x = x || d3.scaleLinear();
-  var y = y || d3.scaleLinear();
-  var interpolation = (state.interpolation == null) ? 'StepBefore' : state.interpolation;
+  var x = x || d3.scale.linear();
+  var y = y || d3.scale.linear();
+  var interpolation = (state.interpolation == null) ? 'step-before' : state.interpolation;
   var prevent_crossing = (state.prevent_crossing == null) ? false : state.prevent_crossing;
   var show_points = (state.show_points == null) ? true : state.show_points;
   var show_lines = (state.show_lines == null) ? true : state.show_lines;
@@ -25,10 +26,10 @@ function profileInteractor(state, x, y) {
   var series = state.series || [];
   var constraints = [];
 
-  var line = d3.line()
+  var line = d3.svg.line()
     .x(function(d) { return x(d[0]); })
     .y(function(d) { return y(d[1]); })
-    .curve(d3["curve" + interpolation]);  
+    .interpolate(interpolation);
          
   
   function data_to_pairs(data, column) {
@@ -95,13 +96,13 @@ function profileInteractor(state, x, y) {
       "#bd70c7"
   ] 
   
-  var drag_corner = d3.drag()
+  var drag_corner = d3.behavior.drag()
     .on("drag", dragmove_corner)
-    .on("start", function() { d3.event.sourceEvent.stopPropagation(); });
+    .on("dragstart", function() { currentEvent.sourceEvent.stopPropagation(); });
     
-  var drag_edge = d3.drag()
+  var drag_edge = d3.behavior.drag()
     .on("drag", dragmove_edge)
-    .on("start", function() { d3.event.sourceEvent.stopPropagation(); });
+    .on("dragstart", function() { currentEvent.sourceEvent.stopPropagation(); });
   
   function interactor(selection) {
     var group = selection.append("g")
@@ -176,9 +177,9 @@ function profileInteractor(state, x, y) {
             new_row[col] = yi;
           }            
           state.profile_data.splice(old_row_index, 0, new_row); 
-          d3.event.preventDefault();
-          d3.event.stopPropagation();
-          dispatch.call("changed", null, state.profile_data);
+          currentEvent.preventDefault();
+          currentEvent.stopPropagation();
+          dispatch.changed(state.profile_data);
           interactor.update();
         })
                 
@@ -202,36 +203,36 @@ function profileInteractor(state, x, y) {
             .attr("direction", "h");
           if (!fixed) right_ext.call(drag_edge);
         }
-        d3.select(this).selectAll(".edge, .extension").attr("d", line);
+        d3.select(this).selectAll(".edge, .extension").attr("d", line).attr("visibility", (state.show_lines) ? "visible" : "hidden");
         
       });
         
       // fire!
-      dispatch.call("update");
+      dispatch.update();
     }
     
     interactor.update();
   }
   
   function dragmove_corner(d,i) {
-    var new_x = x.invert(d3.event.x),
-        new_y = y.invert(d3.event.y);
-    var new_dx = x.invert(x(0) + d3.event.dx),
-        new_dy = y.invert(y(0) + d3.event.dy);
+    var new_x = x.invert(currentEvent.x),
+        new_y = y.invert(currentEvent.y);
+    var new_dx = x.invert(x(0) + currentEvent.dx),
+        new_dy = y.invert(y(0) + currentEvent.dy);
     state.profile_data[i].thickness += new_dx; //= Math.max(0, state.profile_data[i].thickness + new_dx);
     state.profile_data[i][d[2]] = new_y;
     constraints.forEach(function(constraint) {
       constraint(state.profile_data, d, i);
     });
-    dispatch.call("changed", null, state.profile_data);
+    dispatch.changed(state.profile_data);
     interactor.update();
   }
   
   function dragmove_edge(d,i) {
-    var new_x = x.invert(d3.event.x),
-        new_y = y.invert(d3.event.y);
-    var new_dx = x.invert(x(0) + d3.event.dx),
-        new_dy = y.invert(y(0) + d3.event.dy);
+    var new_x = x.invert(currentEvent.x),
+        new_y = y.invert(currentEvent.y);
+    var new_dx = x.invert(x(0) + currentEvent.dx),
+        new_dy = y.invert(y(0) + currentEvent.dy);
     var direction = d3.select(this).attr("direction"),
         old_row_index = d[0][3];
     if (direction == "h") {
@@ -247,7 +248,7 @@ function profileInteractor(state, x, y) {
     constraints.forEach(function(constraint) {
       constraint(state.profile_data, d, old_row_index);
     });
-    dispatch.call("changed", null, state.profile_data);
+    dispatch.changed(state.profile_data);
     interactor.update();
   }
   
