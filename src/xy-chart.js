@@ -46,7 +46,7 @@ function xyChart(options_override) {
   var min_x = (options.min_x == null) ? Infinity : options.min_x;
   var zoomRect = false;
   var zoomScroll = false;
-  var zoomed = false; // zoomed state.
+  var is_zoomed = false; // zoomed state.
     
   var labels = options.series.map(function(d, i) { return d.label || i });
   var x = getScale(options.xtransform);
@@ -56,7 +56,7 @@ function xyChart(options_override) {
       xAxisGrid = d3.svg.axis(),
       yAxisGrid = d3.svg.axis();
   
-  var zoom = d3.behavior.zoom().x(x).y(y).on("zoom", function() { zoomed = true; update() });
+  var zoom = d3.behavior.zoom().x(x).y(y).on("zoom", function() { is_zoomed = true; update() });
   var base_zoom_offset = 0.05; // zoom out 5% from min and max by default;
   var resetzoom = function(ev) {
     var xoffset = (x.range()[1] - x.range()[0]) * base_zoom_offset,
@@ -64,7 +64,7 @@ function xyChart(options_override) {
     zoom.x(x.domain([min_x, max_x]))
         .y(y.domain([min_y, max_y]))
         .scale(1.0 - (2.0 * base_zoom_offset)).translate([xoffset, yoffset]);
-    zoomed = false;
+    is_zoomed = false;
     update();
     //.call(this);
   }
@@ -281,7 +281,7 @@ function xyChart(options_override) {
                 */
               }
               rect.remove();
-              zoomed = true;
+              is_zoomed = true;
               update();
             }, true);
         });
