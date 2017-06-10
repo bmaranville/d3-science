@@ -38,7 +38,7 @@ if (!d3.hasOwnProperty("id")) {
   d3.id = (function(){var a = 0; return function(){return a++}})();
 }
 
-function editor(data, autosize_modules) {
+function editor(data) {
   var data = data || [];
   var module_defs = module_defs || {};
   var grid_spacing = 5;
@@ -374,7 +374,7 @@ function editor(data, autosize_modules) {
     }
     
     // create and append module HTML element:
-    group = d3.select(this).append("g")
+    group = d3.select(document.createElementNS("http://www.w3.org/2000/svg", "g"))
       .datum(module_data)
       .classed("module draggable wireable", true)
       .style("cursor", "move")
@@ -382,42 +382,37 @@ function editor(data, autosize_modules) {
       .attr("x-origin", module_data.x.toFixed())
       .attr("y-origin", module_data.y.toFixed())
       
-      var width = 75 + (padding * 2);
-      var height = 20 + padding * 2;
-      
       var title = group.append("g")
         .classed("title", true)
       
-      // add title text first so other elements are drawn over it
-      var titletext = title.append("text")
+      var width = 75 + (padding * 2);
+      var height = 20 + padding * 2;
+        
+      var titleborder = title.append("rect")
+        .classed("title border", true)
+        .style("fill", "#ffffff")
+        .style("stroke-width", "2px")
+        .style("stroke", "#0000ff")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("x", 0)
+        .attr("y", 0)
+        
+      var titlebox = title.append("text")
         .classed("title text", true)
         .text(function(d) {return d.title || d.module})
         .attr("x", padding)
         .attr("y", padding)
         .attr("dy", "1em")
-      
-      if (autosize_modules) {
-        var text_width = titletext.node().getComputedTextLength() + (padding * 2);
-        width = Math.max(text_width, width);
-      }
+        .style("height", height)
+        .style("padding", padding)
+        .style("width", width)
         
-      var inputs = group.selectAll(".inputs")
+      var inputs = group.selectAll(".input")
         .data(input_terminals)
         .enter().append("g")
-          .classed("terminals", true)
-          .classed("inputs", true)
           .attr("transform", function(d,i) { return "translate(-20," + (height * i).toFixed() + ")"})
       
-      var outputs = group.selectAll(".outputs")
-        .data(output_terminals)
-        .enter().append("g")
-          .classed("terminals", true)
-          .classed("outputs", true)
-          .attr("transform", function(d,i) { return "translate(" + width.toFixed() + "," + (height * i).toFixed() + ")"})
-        
-      
-      
-      // add input elements to group:
       inputs
           .append("text")
             .classed("input label", true)
@@ -429,6 +424,11 @@ function editor(data, autosize_modules) {
       
       inputs.append("rect")
           .classed("terminal input", true)
+          .style("cursor", "crosshair")
+          .style("fill", "#00FF00")
+          .style("fill-opacity", 0.25)
+          .style("stroke-width", "2px")
+          .style("stroke", "#0000ff")
           .attr("width", 20)
           .attr("height", height)
           .attr("wireoffset_x", 0)
@@ -440,9 +440,17 @@ function editor(data, autosize_modules) {
             
       inputs.append("polygon")
           .classed("terminal input state", true)
+          .style("fill", "#444444")
+          .style("fill-opacity", 0.5)
+          .style("display", "none")
           .attr("points", "0,0 20," + (height/2).toFixed() + " 0," + height.toFixed())    
       
-      // add output elements to group:        
+    
+      var outputs = group.selectAll(".output")
+        .data(output_terminals)
+        .enter().append("g")
+          .attr("transform", function(d,i) { return "translate(" + width.toFixed() + "," + (height * i).toFixed() + ")"})
+        
       outputs
           .append("text")
             .classed("output label", true)
@@ -454,6 +462,11 @@ function editor(data, autosize_modules) {
             
       outputs.append("rect")
           .classed("terminal output", true)
+          .style("cursor", "crosshair")
+          .style("fill", "#00FFFF")
+          .style("fill-opacity", 0.25)
+          .style("stroke-width", "2px")
+          .style("stroke", "#0000ff")
           .attr("width", 20)
           .attr("height", height)
           .attr("wireoffset_x", 20)
@@ -465,24 +478,24 @@ function editor(data, autosize_modules) {
       
       outputs.append("polygon")
           .classed("terminal input state", true)
+          .style("fill", "#444444")
+          .style("fill-opacity", 0.5)
+          .style("display", "none")
           .attr("points", "0,0 20," + (height/2).toFixed() + " 0," + height.toFixed())    
       
-      //add title border last to make sure it's on top
-      title.append("rect")
-        .classed("title border", true)
-        .attr("width", width)
-        .attr("height", height)
-        .attr("x", 0)
-        .attr("y", 0)
-
       group.call(drag);
       return group.node();  
   }
   
   function wire(wire_data) {
-    var connector = d3.select(this).append("path")
-      .classed("wire", true);
-    return connector.node();
+    var connector = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    d3.select(connector)
+      .classed("wire", true)
+      .style("cursor", "crosshair")
+      .style("fill", "none")
+      .style("stroke-width", "2.5px")
+      .style("stroke", "red")
+    return connector;
   }
   return editor;
 }

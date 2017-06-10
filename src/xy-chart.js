@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import {event as currentEvent} from 'd3';
 import {extend} from './jquery-extend';
 
 //var extend = jQuery.extend;
@@ -21,6 +20,8 @@ function xyChart(options_override) {
     position_cursor: true,
     vcursor: false,
     hcursor: false,
+    xlabel: "x-axis",
+    ylabel: "y-axis",
     zlabel: "z-axis",
     errorbar_width: 12,
     xtransform: "linear",
@@ -46,28 +47,33 @@ function xyChart(options_override) {
   var min_x = (options.min_x == null) ? Infinity : options.min_x;
   var zoomRect = false;
   var zoomScroll = false;
-  var zoomed = false; // zoomed state.
+  var is_zoomed = false; // zoomed state.
     
   var labels = options.series.map(function(d, i) { return d.label || i });
+
   var x = getScale(options.xtransform);
   var y = getScale(options.ytransform);
-  var xAxis = d3.svg.axis(),
-      yAxis = d3.svg.axis(),
-      xAxisGrid = d3.svg.axis(),
-      yAxisGrid = d3.svg.axis();
+  var orig_x, orig_y, orig_z;
+  var xAxis = d3.axisBottom(x),
+      yAxis = d3.axisLeft(y),
+      xAxisGrid = d3.axisBottom(x),
+      yAxisGrid = d3.axisLeft(y);
   
-  var zoom = d3.behavior.zoom().x(x).y(y).on("zoom", function() { zoomed = true; update() });
-  var base_zoom_offset = 0.05; // zoom out 5% from min and max by default;
-  var resetzoom = function(ev) {
-    var xoffset = (x.range()[1] - x.range()[0]) * base_zoom_offset,
-        yoffset = (y.range()[1] + y.range()[0]) * base_zoom_offset;
-    zoom.x(x.domain([min_x, max_x]))
-        .y(y.domain([min_y, max_y]))
-        .scale(1.0 - (2.0 * base_zoom_offset)).translate([xoffset, yoffset]);
-    zoomed = false;
+  function zoomed() { 
+    is_zoomed = true;
+    if (d3.event && d3.event.transform) {
+      // emulating old zoom behavior:
+      var new_x = d3.event.transform.rescaleX(orig_x),
+          new_y = d3.event.transform.rescaleY(orig_y);
+      
+      x.domain(new_x.domain());
+      y.domain(new_y.domain());
+    }
     update();
-    //.call(this);
   }
+  var zoom = d3.zoom().on("zoom.xy", zoomed);
+  var base_zoom_offset = 0.05; // zoom out 5% from min and max by default;
+  
   var source_data;
   
   function do_autoscale() {
@@ -119,7 +125,7 @@ function xyChart(options_override) {
     }
     return {min_x: min_x, max_x: max_x, min_y: min_y, max_y: max_y}
   }
-  this.do_autoscale = do_autoscale;
+  chart.do_autoscale = do_autoscale;
     
   // make it possible to show single data points:
   if (min_x == max_x) {
@@ -183,14 +189,15 @@ function xyChart(options_override) {
       y
           .domain([min_y, max_y])
           .range([height, 0]);
+          
+      orig_x = x.copy();
+      orig_y = y.copy();
             
       xAxisGrid
         .scale(x)
 	      .tickSize(-height)
 	      .ticks(options.numberOfTicks)
 	      .tickPadding(10)	
-	      .tickSubdivide(true)	
-        .orient("bottom")
         .tickFormat("");	
 	
       yAxisGrid
@@ -198,25 +205,19 @@ function xyChart(options_override) {
 	      .tickPadding(10)
 	      .ticks(options.numberOfTicks)
 	      .tickSize(-width)
-	      .tickSubdivide(true)	
-        .orient("left")
         .tickFormat("");
         
       xAxis
         .scale(x)
         .ticks(options.numberOfTicks)
-        .tickPadding(10)	
-        .tickSubdivide(true)	
-        .orient("bottom");
+        .tickPadding(10);
       
       yAxis
         .scale(y)
         .ticks(options.numberOfTicks)
-        .tickPadding(10)	
-        .tickSubdivide(true)
-        .orient("left");
-    
-      zoom.x(x).y(y);
+        .tickPadding(10);
+            
+      //zoom.x(x).y(y);
 
       //************************************************************
       // Generate our SVG object
@@ -226,7 +227,7 @@ function xyChart(options_override) {
         //.call(zoom) // call this from zoomScroll setter
         .on("dblclick.zoom", null)
         //.on("dblclick.resetzoom", null)
-        .on("dblclick.resetzoom", resetzoom)
+        .on("dblclick.resetzoom", chart.resetzoom)
           
       var axes = svg.append("g")
         .attr("class", "axes")
@@ -236,59 +237,49 @@ function xyChart(options_override) {
         .attr("class", "mainview")
         .attr("transform", "translate(" + options.margin.left + "," + options.margin.top + ")");  
 
-      var drag = d3.behavior.drag();
-      svg.call(drag);
-      chart.drag = drag;
+      var drag = d3.drag();
+      drag.on("start", drag_started);
       
-      drag
-        .on("dragstart.zoomRect", function() {
-          if (!zoomRect) return;
-          var e = mainview.node(),
+      function drag_started() {
+        if (!zoomRect) return;
+        var e = mainview.node(),
             origin = d3.mouse(e),
             rect = mainview.append("rect").attr("class", "zoom");
-          d3.select("body").classed("noselect", true);
-          origin[0] = Math.max(0, Math.min(width, origin[0]));
-          origin[1] = Math.max(0, Math.min(height, origin[1]));
-          //d3.select(window)
-          drag
-            .on("drag.zoomRect", function() {
-              var m = d3.mouse(e);
-              m[0] = Math.max(0, Math.min(width, m[0]));
-              m[1] = Math.max(0, Math.min(height, m[1]));
-              rect.attr("x", Math.min(origin[0], m[0]))
-                .attr("y", Math.min(origin[1], m[1]))
-                .attr("width", Math.abs(m[0] - origin[0]))
-                .attr("height", Math.abs(m[1] - origin[1]));
-            })
-            .on("dragend.zoomRect", function() {
-              //d3.select(window).on("mousemove.zoomRect", null).on("mouseup.zoomRect", null);
-              drag.on("drag.zoomRect", null).on("dragend.zoomRect", null);
-              d3.select("body").classed("noselect", false);
-              var m = d3.mouse(e);
-              m[0] = Math.max(0, Math.min(width, m[0]));
-              m[1] = Math.max(0, Math.min(height, m[1]));
-              if (m[0] !== origin[0] && m[1] !== origin[1]) {
-                zoom.x(x.domain([origin[0], m[0]].map(x.invert).sort(function(a,b) {return a-b})))
-                    .y(y.domain([origin[1], m[1]].map(y.invert).sort(function(a,b) {return a-b})));
-              } 
-              else {
-                // reset zoom on single click? No!
-                /*
-                zoom.scale(1);
-                zoom.translate([0,0]);
-                zoom.x(x.domain([min_x, max_x]))
-                    .y(y.domain([min_y, max_y]));
-                */
-              }
-              rect.remove();
-              zoomed = true;
-              update();
-            }, true);
-        });
+            
+        d3.event.on("drag", dragged).on("end", ended);
+
+        function dragged(d) {
+          var m = d3.mouse(e);
+          m[0] = Math.max(0, Math.min(width, m[0]));
+          m[1] = Math.max(0, Math.min(height, m[1]));
+          rect.attr("x", Math.min(origin[0], m[0]))
+            .attr("y", Math.min(origin[1], m[1]))
+            .attr("width", Math.abs(m[0] - origin[0]))
+            .attr("height", Math.abs(m[1] - origin[1]));
+        }
+
+        function ended() {
+          d3.select("body").classed("noselect", false);
+          var m = d3.mouse(e);
+          m[0] = Math.max(0, Math.min(width, m[0]));
+          m[1] = Math.max(0, Math.min(height, m[1]));
+          if (m[0] !== origin[0] && m[1] !== origin[1]) {
+            var x_domain = [origin[0], m[0]].map(x.invert).sort(function(a,b) {return a-b}),
+                y_domain = [origin[1], m[1]].map(y.invert).sort(function(a,b) {return a-b});
+            x.domain(x_domain);
+            y.domain(y_domain);
+            update();
+          }
+          rect.remove();
+          is_zoomed = true;
+        }
+      }
       
-      mainview.append("g")
-        .attr("class", "legend")
-        .attr("transform", "translate(" + [width-options.legend.left, options.legend.top] + ")");
+      svg.call(drag);
+      chart.drag = drag;
+      chart.zoom = zoom;
+      
+      
         //.call(zoom);
       axes.append("g")
         .attr("class", "x axis")
@@ -305,6 +296,7 @@ function xyChart(options_override) {
         .attr("transform", "rotate(-90)")
         .attr("y", -options.margin.left + 15 )
         .attr("x", -height/2)
+      
       mainview.append("defs").append("clipPath")
         .attr("id", "d3clip_" + id.toFixed()) // local def
         .append("rect")
@@ -319,11 +311,25 @@ function xyChart(options_override) {
         .attr("class", "x grid");           
       axes.append("g")
         .attr("class", "y grid");
+        
+      mainview.append("rect")
+        .classed("zoom-box", true)
+        .attr("width", width)
+        .attr("height", height)
+        .style("visibility", "hidden")
+        .attr("pointer-events", "all")
       
+      // legend on top so it can be moved...
+      mainview.append("g")
+        .attr("class", "legend")
+        .attr("transform", "translate(" + [width-options.legend.left, options.legend.top] + ")");
+        
       axes.select(".x.axis").call(xAxis);
       axes.select(".y.axis").call(yAxis);
       axes.select(".x.grid").call(xAxisGrid);
       axes.select(".y.grid").call(yAxisGrid);
+      // remove added attr that blocks styling:
+      axes.selectAll(".grid .tick line").attr("stroke", null);
       axes.select(".x.axis-label").html(((options.axes || {}).xaxis || {}).label || "x-axis");
       axes.select(".y.axis-label").html(((options.axes || {}).yaxis || {}).label || "y-axis");
       
@@ -335,7 +341,7 @@ function xyChart(options_override) {
        
       chart.svg = svg;
       chart.g = svg.selectAll("g.mainview");
-      resetzoom(); // set to 10% zoom out.
+      chart.resetzoom(); // set to 10% zoom out.
 	
       chart.draw_lines(data);
       chart.draw_points(data);
@@ -346,16 +352,16 @@ function xyChart(options_override) {
       // Position cursor (shows position of mouse in data coords)
       //************************************************************
       if (options.position_cursor) {
-        var position_cursor = mainview.selectAll(".position-cursor")
+        var pcurse_selection = mainview.selectAll(".position-cursor")
           .data([0])
-        position_cursor
+        var position_cursor = pcurse_selection
           .enter().append("text")
             .attr("class", "position-cursor")
             .attr("x", width - 10)
             .attr("y", height - 10)
             .style("text-anchor", "end");
           
-        var follow = function (){  
+        var follow = function (){
           var mouse = d3.mouse(mainview.node());
           position_cursor.text(
             x.invert(mouse[0]).toPrecision(5) + 
@@ -364,8 +370,6 @@ function xyChart(options_override) {
         }
           
           svg
-            .on("mousemove.position_cursor", null)
-            .on("mouseover.position_cursor", null)
             .on("mousemove.position_cursor", follow)
             .on("mouseover.position_cursor", follow);
       }
@@ -415,14 +419,14 @@ function xyChart(options_override) {
     });
   }
     var legend_offset = {x: 0, y: 0};
-    var drag_legend = d3.behavior.drag()
-        .on("drag", function(d,i) {
-            legend_offset.x += currentEvent.dx;
-            legend_offset.y += currentEvent.dy;
-            chart.draw_legend(source_data);
-          })
-        .on("dragstart", function() { currentEvent.sourceEvent.stopPropagation(); })
-    
+    var drag_legend = d3.drag()
+      .on("drag", function(d,i) {
+        legend_offset.x += d3.event.dx;
+        legend_offset.y += d3.event.dy;
+        chart.draw_legend(source_data);
+        })
+      .on("start", function() { d3.event.sourceEvent.stopPropagation(); })
+
     //************************************************************
     // Create D3 legend
     //************************************************************
@@ -435,6 +439,8 @@ function xyChart(options_override) {
           .each(function(d, i) {
             var g = d3.select(this);
             g.append("rect")
+              .attr("x", -options.legend.left)
+              .attr("y", i*25 + 15)
               .attr("width", 10)
               .attr("height", 10)
               .style("fill", get_series_color(null, i))
@@ -452,6 +458,8 @@ function xyChart(options_override) {
               .call(drag_legend);
             
             g.append("text")
+              .attr("x", 15-options.legend.left)
+              .attr("y", i * 25 + 25)
               .attr("height",30)
               .attr("width",100)
               .style("text-anchor", "start")
@@ -467,7 +475,8 @@ function xyChart(options_override) {
                   .classed('highlight', false)
                   .classed('unhighlight', false);
               })
-              .call(drag_legend);
+              .call(drag_legend)
+
           });
       update_sel.exit().remove();
       
@@ -483,7 +492,7 @@ function xyChart(options_override) {
         });
     }
     
-    var line = d3.svg.line()
+    var line = d3.line()
       .defined(function(d) { return (d && d[1] != null && isFinite(x(d[0])) && isFinite(y(d[1]))); })
       .x(function(d) { return x(d[0]); })
       .y(function(d) { return y(d[1]); });
@@ -567,12 +576,15 @@ function xyChart(options_override) {
     //************************************************************
     function update() {
       var svg = chart.svg;
+      
       svg.select(".x.axis").call(xAxis);
       svg.select(".y.axis").call(yAxis); 
       svg.select(".x.axis .x.axis-label").html(options.axes.xaxis.label);
       svg.select(".y.axis .y.axis-label").html(options.axes.yaxis.label);
       svg.select(".x.grid").call(xAxisGrid);
       svg.select(".y.grid").call(yAxisGrid);
+      // remove added attr that blocks styling:
+      svg.selectAll(".grid .tick line").attr("stroke", null);
       svg.selectAll("rect.zoom").remove();
 
       chart.draw_lines(source_data);
@@ -663,6 +675,20 @@ function xyChart(options_override) {
       return pathstring;
     }
     
+    chart.resetzoom = function() {
+      var xoffset = (x.range()[1] - x.range()[0]) * base_zoom_offset,
+          yoffset = (y.range()[1] + y.range()[0]) * base_zoom_offset;
+      var zoombox = chart.g.select("rect.zoom-box");
+      x.domain([min_x, max_x]);
+      y.domain([min_y, max_y]);
+      orig_x = x.copy();
+      orig_y = y.copy();
+      //zoombox.call(zoom.transform, d3.zoomIdentity);
+      zoombox
+        .call(zoom.transform, d3.zoomIdentity.translate(xoffset, yoffset).scale(1.0 - 2*base_zoom_offset) );
+      is_zoomed = false;
+    }
+    
     chart.options = function(_, clear) {
       if (!arguments.length) return options;
       if (clear) {
@@ -677,11 +703,11 @@ function xyChart(options_override) {
       if (!arguments.length) return source_data;
       source_data = _;
       do_autoscale();
-      //x.domain([min_x, max_x]);
-      //y.domain([min_y, max_y]);
-      if (!zoomed && options.autoscale) { chart.resetzoom(); }
+      if (!is_zoomed && options.autoscale) { chart.resetzoom(); }
       return chart;
     };
+    
+    chart.is_zoomed = function() { return is_zoomed; }
     
     chart.x = function(_) {
       if (!arguments.length) return x;
@@ -725,7 +751,7 @@ function xyChart(options_override) {
       return chart;
     };
     
-    chart.zoomScroll = function(_) {
+    chart.zoomScroll_old = function(_) {
       if (!arguments.length) return zoomScroll;
       zoomScroll = _;
       if (zoomScroll == true) {
@@ -738,6 +764,20 @@ function xyChart(options_override) {
       return chart;
     };
     
+    chart.zoomScroll = function(_) {
+      if (!arguments.length) return zoomScroll;
+      zoomScroll = _;
+      //var scrollLayer = chart.svg.select("g.mainview rect");
+      var zoombox = chart.svg.select("g.mainview rect.zoom-box");
+      if (zoomScroll == true) {
+        zoombox.call(zoom).on("dblclick.zoom", null);
+      }
+      else if (zoomScroll == false) {
+        zoombox.on(".zoom", null);
+      }
+      return chart;
+    };
+    
     chart.xtransform = function(_) {
     if (!arguments.length) return options.xtransform;
       options.xtransform = _;
@@ -746,6 +786,7 @@ function xyChart(options_override) {
       x = getScale(options.xtransform);
       do_autoscale();
       x.domain([min_x, max_x]).range(old_range);
+      orig_x = x.copy();
       xAxis.scale(x);
       xAxisGrid.scale(x);
       interactors.forEach(function(d) {d.x(x)});
@@ -761,6 +802,7 @@ function xyChart(options_override) {
       y = getScale(options.ytransform);
       do_autoscale();
       y.domain([min_y, max_y]).range(old_range);
+      orig_y = y.copy();
       yAxis.scale(y);
       yAxisGrid.scale(y);
       interactors.forEach(function(d) {d.y(y)});
@@ -792,6 +834,7 @@ function xyChart(options_override) {
       dsvg.selectAll("path").style("fill", "none");
       dsvg.selectAll(".mainview>rect").style("fill", "none");
       dsvg.selectAll("clippath rect").style("fill", "none");
+      dsvg.selectAll(".axis text").style("font-size", "14px").style("fill", "black");
       dsvg.selectAll(".axis-label").style("font-size", "18px");
       dsvg.selectAll(".axis path, .axis line").style("stroke", "black"); //.css("stroke-width", "1.5px");
       dsvg.selectAll(".grid .tick").style("stroke", "lightgrey")
@@ -820,7 +863,10 @@ function xyChart(options_override) {
       x.range([0, width]);
       y.range([height, 0]);
       
-      zoom.x(x).y(y);
+      orig_x = x.copy();
+      orig_y = y.copy();
+      
+      //zoom.x(x).y(y);
       xAxis.scale(x);
       yAxis.scale(y);
       xAxisGrid.scale(x).tickSize(-height);
@@ -831,15 +877,15 @@ function xyChart(options_override) {
       chart.svg.select("clipPath rect").attr("width", width).attr("height", height);
       chart.svg.selectAll("g.axes g.x").attr("transform", "translate(0," + height + ")");
       
-      chart.svg.selectAll("g.x.axis text").attr("x", width/2.0);
-      chart.svg.selectAll("g.y.axis text").attr("x", -height/2.0);
+      chart.svg.selectAll("g.x.axis text.axis-label").attr("x", width/2.0);
+      chart.svg.selectAll("g.y.axis text.axis-label").attr("x", -height/2.0);
       chart.svg.select(".position-cursor").attr("x", width-10).attr("y", height-10);
       chart.svg.select("g.legend").attr("transform", "translate(" + (width-65) + ",25)");
       
       update();
     }
     
-    chart.resetzoom = resetzoom;
+    //chart.resetzoom = resetzoom;
     
     chart.type = "xy";
     
@@ -847,5 +893,5 @@ function xyChart(options_override) {
 }
 
 function getScale(scalename) {
-  return d3.scale[scalename]();
+  return d3['scale' + scalename.slice(0,1).toUpperCase() + scalename.slice(1).toLowerCase()]();
 }
