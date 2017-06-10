@@ -679,9 +679,11 @@ function xyChart(options_override) {
       do_autoscale();
       //x.domain([min_x, max_x]);
       //y.domain([min_y, max_y]);
-      if (!zoomed && options.autoscale) { chart.resetzoom(); }
+      if (!is_zoomed && options.autoscale) { chart.resetzoom(); }
       return chart;
     };
+    
+    chart.is_zoomed = function() { return is_zoomed; }
     
     chart.x = function(_) {
       if (!arguments.length) return x;
