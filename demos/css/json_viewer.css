@@ -1,0 +1,54 @@
+.json-viewer ul.type-object {
+  list-style: none;
+  padding-left: 1em;
+  margin: 0px;
+}
+
+.json-viewer li.root-node {
+  list-style: none;
+  font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
+}
+
+.json-viewer li.hidden ol, 
+.json-viewer li.hidden ul {
+  display: none;
+}
+
+.json-viewer li.hidden > span.open-indicator {
+  display: none;
+}
+
+.json-viewer li:not(.hidden) > span.closed-indicator {
+  display: none;
+}
+
+.json-viewer ul.hidden li, 
+.json-viewer ol.hidden li {
+  display: none;
+}
+
+.json-viewer ol.type-array {
+  list-style: none;
+  padding-left: 1em;
+  margin: 0px;
+}
+
+.json-viewer span.type-number {
+  color: blue;
+}
+
+.json-viewer span.type-string {
+  color: red;
+}
+
+.json-viewer span.type-null {
+  color: purple;
+}
+
+.json-viewer label.key {
+  color: purple;
+}
+
+.json-viewer span.quotes {
+  color: black;
+}

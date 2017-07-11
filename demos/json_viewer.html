@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/json_viewer.css" />
+<body>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="../lib/json_viewer.js"></script>
+<script>
+  var test_json = {
+  "wires": [
+    {
+      "source": [
+        0,
+        "output"
+      ],
+      "target": [
+        1,
+        "data"
+      ]
+    },
+    {
+      "source": [
+        1,
+        "output"
+      ],
+      "target": [
+        2,
+        "data"
+      ]
+    },
+    {
+      "source": [
+        2,
+        "output"
+      ],
+      "target": [
+        11,
+        "data"
+      ]
+    },
+    {
+      "source": [
+        3,
+        "output"
+      ],
+      "target": [
+        4,
+        "data"
+      ]
+    },
+    {
+      "source": [
+        4,
+        "output"
+      ],
+      "target": [
+        8,
+        "data"
+      ]
+    },
+    {
+      "source": [
+        8,
+        "output"
+      ],
+      "target": [
+        11,
+        "backp"
+      ]
+    },
+    {
+      "source": [
+        5,
+        "output"
+      ],
+      "target": [
+        6,
+        "data"
+      ]
+    },
+    {
+      "source": [
+        6,
+        "output"
+      ],
+      "target": [
+        7,
+        "data"
+      ]
+    },
+    {
+      "source": [
+        7,
+        "output"
+      ],
+      "target": [
+        11,
+        "backm"
+      ]
+    },
+    {
+      "source": [
+        9,
+        "output"
+      ],
+      "target": [
+        10,
+        "data"
+      ]
+    },
+    {
+      "source": [
+        10,
+        "output"
+      ],
+      "target": [
+        12,
+        "data"
+      ]
+    },
+    {
+      "source": [
+        12,
+        "output"
+      ],
+      "target": [
+        13,
+        "data"
+      ]
+    },
+    {
+      "source": [
+        13,
+        "output"
+      ],
+      "target": [
+        14,
+        "base"
+      ]
+    },
+    {
+      "source": [
+        11,
+        "output"
+      ],
+      "target": [
+        14,
+        "data"
+      ]
+    }
+  ],
+  "modules": [
+    {
+      "title": "load spec!",
+      "module": "ncnr.refl.super_load",
+      "module_id": 0,
+      "y": 10,
+      "x": 30,
+      "config": {
+        "intent": "specular",
+        "filelist": [
+          {
+            "path": "ncnrdata/ngd/201704/22927/data/BLS12A_100Kcoerc37231.nxz.pbr",
+            "source": "ncnr",
+            "mtime": 1495360230,
+            "entries": [
+              "DOWN_DOWN"
+            ]
+          },
+          {
+            "path": "ncnrdata/ngd/201704/22927/data/BLS12A_100Kcoerc37231.nxz.pbr",
+            "source": "ncnr",
+            "mtime": 1495360230,
+            "entries": [
+              "UP_DOWN"
+            ]
+          },
+          {
+            "path": "ncnrdata/ngd/201704/22927/data/BLS12A_100Kcoerc37231.nxz.pbr",
+            "source": "ncnr",
+            "mtime": 1495360230,
+            "entries": [
+              "DOWN_UP"
+            ]
+          },
+          {
+            "path": "ncnrdata/ngd/201704/22927/data/BLS12A_100Kcoerc37231.nxz.pbr",
+            "source": "ncnr",
+            "mtime": 1495360230,
+            "entries": [
+              "UP_UP"
+            ]
+          },
+          {
+            "path": "ncnrdata/ngd/201704/22927/data/BLS12A_100Kcoerc37230.nxz.pbr",
+            "source": "ncnr",
+            "mtime": 1495319675,
+            "entries": [
+              "DOWN_DOWN"
+            ]
+          },
+          {
+            "path": "ncnrdata/ngd/201704/22927/data/BLS12A_100Kcoerc37230.nxz.pbr",
+            "source": "ncnr",
+            "mtime": 1495319675,
+            "entries": [
+              "UP_DOWN"
+            ]
+          },
+          {
+            "path": "ncnrdata/ngd/201704/22927/data/BLS12A_100Kcoerc37230.nxz.pbr",
+            "source": "ncnr",
+            "mtime": 1495319675,
+            "entries": [
+              "DOWN_UP"
+            ]
+          },
+          {
+            "path": "ncnrdata/ngd/201704/22927/data/BLS12A_100Kcoerc37230.nxz.pbr",
+            "source": "ncnr",
+            "mtime": 1495319675,
+            "entries": [
+              "UP_UP"
+            ]
+          }
+        ],
+        "detector_correction": true
+      }
+    },
+    {
+      "y": 10,
+      "module_id": 1,
+      "title": "mask",
+      "module": "ncnr.refl.mask_points",
+      "x": 170
+    },
+    {
+      "y": 10,
+      "module_id": 2,
+      "title": "join",
+      "module": "ncnr.refl.join",
+      "x": 310
+    },
+    {
+      "title": "load bg+",
+      "module": "ncnr.refl.super_load",
+      "module_id": 3,
+      "y": 50,
+      "x": 30,
+      "config": {
+        "intent": "background+"
+      }
+    },
+    {
+      "y": 50,
+      "module_id": 4,
+      "title": "mask",
+      "module": "ncnr.refl.mask_points",
+      "x": 170
+    },
+    {
+      "title": "load bg-",
+      "module": "ncnr.refl.super_load",
+      "module_id": 5,
+      "y": 90,
+      "x": 30,
+      "config": {
+        "intent": "background-"
+      }
+    },
+    {
+      "y": 90,
+      "module_id": 6,
+      "title": "mask",
+      "module": "ncnr.refl.mask_points",
+      "x": 170
+    },
+    {
+      "y": 90,
+      "module_id": 7,
+      "title": "join",
+      "module": "ncnr.refl.join",
+      "x": 310
+    },
+    {
+      "y": 50,
+      "module_id": 8,
+      "title": "join",
+      "module": "ncnr.refl.join",
+      "x": 310
+    },
+    {
+      "title": "load slit",
+      "module": "ncnr.refl.super_load",
+      "module_id": 9,
+      "y": 130,
+      "x": 30,
+      "config": {
+        "intent": "intensity"
+      }
+    },
+    {
+      "y": 130,
+      "module_id": 10,
+      "title": "mask",
+      "module": "ncnr.refl.mask_points",
+      "x": 170
+    },
+    {
+      "y": 10,
+      "module_id": 11,
+      "title": "sub bg",
+      "module": "ncnr.refl.subtract_background",
+      "x": 455
+    },
+    {
+      "y": 130,
+      "module_id": 12,
+      "title": "rescale",
+      "module": "ncnr.refl.rescale",
+      "x": 310
+    },
+    {
+      "y": 130,
+      "module_id": 13,
+      "title": "join",
+      "module": "ncnr.refl.join",
+      "x": 455
+    },
+    {
+      "y": 55,
+      "module_id": 14,
+      "title": "divide",
+      "module": "ncnr.refl.divide_intensity",
+      "x": 600
+    }
+  ]
+}
+
+window.onload = function() {
+  var root = d3.select('div#tree');
+  json_viewer.add_tree(root, test_json);
+}
+
+</script>
+<div id="tree"></div>
+</body>
