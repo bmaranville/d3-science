@@ -9,3 +9,4 @@ Demos:
   * [Heatmap charts in 2d](demos/d3heat-lib.html)
   * [Dataflow diagram editor](demos/dataflow-editor-streamline-new.html)
   * [Simulation of reflectometer alignment](demos/reflectometer_alignment_sim.html)
+  * [JSON viewer](demos/json_viewer.html)
