@@ -1,3 +1,5 @@
+// This software is in the public domain.
+
 export {add_tree};
 
 // need to sort out JSON types: object, number, null, array, string
