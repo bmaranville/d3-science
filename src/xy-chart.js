@@ -17,6 +17,7 @@ function xyChart(options_override) {
     show_points: true,
     show_line: true,
     show_errorbars: false,
+    show_grid: true,
     numberOfTicks: 4,
     position_cursor: true,
     vcursor: false,
@@ -98,17 +99,13 @@ function xyChart(options_override) {
       min_x = extents[0];
       max_x = extents[1];
     }
-    /*
-    var dx = (x(max_x) - x(min_x)) || 1.0,
-        dy = (y(max_y) - y(min_y)) || 1.0;
-    
-    min_x = x.invert(x(min_x) - (dx * base_zoom_offset));
-    max_x = x.invert(x(max_x) + (dx * base_zoom_offset));
-    min_y = y.invert(y(min_y) - (dy * base_zoom_offset)); 
-    max_y = y.invert(y(max_y) + (dy * base_zoom_offset));
-    */
-    var xav= max_x - min_x,
-        yrange = max_y - min_y;
+
+    // if datasets are empty, don't break things.
+    if (min_x == null) { min_x = 1; }
+    if (max_x == null) { max_x = 1; }
+    if (min_y == null) { min_y = 1; }
+    if (max_y == null) { max_y = 1; }
+
     if (max_x == min_x) {
       max_x += (max_x * 0.1) || 0.1;
       min_x -= (min_x * 0.1) || 0.1;
@@ -684,6 +681,15 @@ function xyChart(options_override) {
     };
     
     chart.is_zoomed = function() { return is_zoomed; }
+    
+    chart.show_grid = function(_) {
+      if (!arguments.length) return options.show_grid;
+      options.show_grid = _;
+      chart.outercontainer.selectAll(".grid").style(
+        "display", (options.show_grid == true || options.show_grid == "true") ? "inline" : "none"
+      );
+      return chart;
+    };
     
     chart.x = function(_) {
       if (!arguments.length) return x;
