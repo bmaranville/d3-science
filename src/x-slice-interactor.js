@@ -99,7 +99,7 @@ function xSliceInteractor(state, x, y) {
           .style("fill", "none")
           .style("cursor", cursor)
           .style("stroke", state.color1)
-          .style("stroke-width", "4px");
+          .style("stroke-width", "7px");
           
     var lines = lines_group.selectAll(".lines")
       .data(state_to_paths(state))
