@@ -13,7 +13,7 @@ function ellipseInteractor(state, x, y) {
   var dispatch = d3.dispatch("update");
   var x = x || d3.scale.linear();
   var y = y || d3.scale.linear();
-  if (x.name != 'u' || y.name != 'u') {
+  if (x.name != 'i' || y.name != 'i') {
     throw "circle only defined for linear scales";
     return
   }
