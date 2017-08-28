@@ -116,7 +116,7 @@ function xyChart(options_override) {
     }
     return {min_x: min_x, max_x: max_x, min_y: min_y, max_y: max_y}
   }
-  this.do_autoscale = do_autoscale;
+  chart.do_autoscale = do_autoscale;
     
   // make it possible to show single data points:
   if (min_x == max_x) {
