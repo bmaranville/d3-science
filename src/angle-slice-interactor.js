@@ -21,7 +21,6 @@ function angleSliceInteractor(state, x, y) {
   var show_points = (state.show_points == null) ? true : state.show_points;
   var show_lines = (state.show_lines == null) ? true : state.show_lines;
   var show_center = (state.show_center == null) ? true : state.show_center;
-  var fixed = (state.fixed == null) ? false : state.fixed;
   var cursor = (fixed) ? "auto" : "move";
   
   var angle_to_path = function(cx, cy, angle) {
@@ -121,7 +120,7 @@ function angleSliceInteractor(state, x, y) {
         .attr("class", function(d) {return d['classname']})
         .classed("lines", true)
         .attr("d", function(d) {return d['path']})    
-    if (!fixed) lines.call(drag_lines);
+    if (state.lines_fixed) lines.call(drag_lines);
     
     var center_group = group.append("g")
       .classed("center_group", true)
@@ -133,7 +132,7 @@ function angleSliceInteractor(state, x, y) {
         .attr("r", point_radius)
         .attr("cx", function(d) {return x(d[0])})
         .attr("cy", function(d) {return y(d[1])})
-    if (!fixed) center_group.call(drag_center);
+    if (state.center_fixed) center_group.call(drag_center);
 
     interactor.update = function(preventPropagation) {
       group.select('.center')
