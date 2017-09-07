@@ -356,8 +356,8 @@ function editor(data, autosize_modules) {
     var input_terminals = module_def.inputs || [];
     var output_terminals = module_def.outputs || [];
     if (is_embedded_module) {
-      input_terminals = input_terminals.map(function(t) { return resolve_terminal(module_def, t) });
-      output_terminals = output_terminals.map(function(t) { return resolve_terminal(module_def, t) });
+      input_terminals = input_terminals.map(function(t) { return resolve_terminal(module_def, 'inputs', t) });
+      output_terminals = output_terminals.map(function(t) { return resolve_terminal(module_def, 'outputs', t) });
     }
 
     var padding = 5;
@@ -498,7 +498,7 @@ function editor(data, autosize_modules) {
     var target_terminal = target_module_def[side].filter(function(f) { return f.id == target_terminal_id })[0];
     var resolved_terminal = (is_target_embedded) ? resolve_terminal(target_module_def, side, target_terminal) : target_terminal;
     // make a copy...
-    resolved_terminal = $.extend(true, {}, resolved_terminal);
+    resolved_terminal = extend(true, {}, resolved_terminal);
     resolved_terminal.id = terminal.id;
     if (terminal.label) {
       resolved_terminal.label = terminal.label;
