@@ -103,7 +103,7 @@ function editor(data, autosize_modules) {
     var key_fn = function(d) {
       if (d.module_id == undefined) {
         var id = d3.id();
-        Object.defineProperty(d, "module_id", {get: function() {return id}});
+        Object.defineProperty(d, "module_id", {enumerable: false, get: function() {return id}});
       }
       return d.module_id; 
     }
