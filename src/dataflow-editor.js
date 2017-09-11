@@ -42,8 +42,10 @@ function editor(data, autosize_modules) {
   var data = data || [];
   var module_defs = module_defs || {};
   var grid_spacing = 5;
+  var padding = 5;
   var wirecurve = 0.67;
   var svg, container;
+  var exposed_wires = [];
   var dispatch = d3.dispatch("update", "draw_wires");
   dispatch.on("update", update);
   dispatch.on("draw_wires", draw_wires);
@@ -56,17 +58,14 @@ function editor(data, autosize_modules) {
         if (e.length != 2) { return false }
         var module_index = e[0],
             terminal_id = e[1];
-        return (container.select('.module[index="' + module_index + '"] .terminal[terminal_id="' + terminal_id + '"]').empty() == false)
+        if (module_index > -1) {
+          return !(container.select('.module[index="' + module_index + '"] .terminal[terminal_id="' + terminal_id + '"]').empty());
+        }
+        else {
+          return !(container.select('.exposed-terminals .terminal[terminal_id="' + terminal_id + '"]').empty());
+        }
     }
   }
-  /*
-  var wire_checkends = function(w) {
-    var src_exists, tgt_exists;
-    src_exists = (w.source == 'cursor' || !(svg.select('[id=\"' + w.source + '\"]').empty()) );
-    tgt_exists = (w.target == 'cursor' || !(svg.select('[id=\"' + w.target + '\"]').empty()) );
-    return (src_exists && tgt_exists)
-  }
-  */
   
   var wire_checkends = function(w) {
     return (check_end(w.source) && check_end(w.target))
@@ -123,6 +122,15 @@ function editor(data, autosize_modules) {
       }
     }
     
+    var exposed_group = svg.selectAll(".exposed-terminals");
+    
+    var exposed_inputs_update = svg.selectAll(".exposed-terminals .inputs").data(function(d) { return d.inputs || [] });
+    exposed_inputs_update.enter().append(exposed_input);
+    exposed_inputs_update.exit().remove();
+    var exposed_outputs_update = exposed_group.selectAll(".outputs").data(function(d) { return d.outputs || [] });
+    exposed_outputs_update.enter().append(exposed_output);
+    exposed_outputs_update.exit().remove();
+    
     // moves endpoints when index shifts because of deletions below in the list of modules
     rewire(index_updates);
     
@@ -137,12 +145,14 @@ function editor(data, autosize_modules) {
   }
   
   function draw_wires() {
-    svg.selectAll(".wire").each(draw_wire) 
+    svg.selectAll(".wire").each(draw_wire)
+    svg.selectAll(".exposed-wire").each(draw_wire)
   }
   
   function get_terminal_pos(term_id) {
-    var module = container.select('.module[index="' + term_id[0] + '"]');
-    var terminal = module.select('.terminal[terminal_id="' + term_id[1] + '"]');
+    var parent = (term_id[0] == "exposed") ? container.selectAll('.exposed-terminals') : 
+      container.select('.module[index="' + term_id[0] + '"]');
+    var terminal = parent.select('.terminal[terminal_id="' + term_id[1] + '"]');
     if (terminal.empty()) { return null }
     var reference_point = svg.node().createSVGPoint();
     var terminal_origin = reference_point.matrixTransform(terminal.node().getCTM());
@@ -171,7 +181,7 @@ function editor(data, autosize_modules) {
     }
     if (tgt_pos == null || src_pos == null) {
       // remove wires pointing to missing terminals
-      var wires = svg.datum().wires;
+      var wires = svg.datum().wires.concat(exposed_wires);
         for (var i=0; i<wires.length; i++) {
           var w = wires[i]; 
           if (w.source == src && w.target == tgt) {
@@ -202,6 +212,18 @@ function editor(data, autosize_modules) {
     svg = selection.selectAll("svg.editor").data(data)
       .enter().append("svg")
       .classed("editor", true)
+    
+    var exposed_group = svg.append("g")
+      .classed("exposed-terminals", true)
+      .classed("wireable", true)
+      
+    exposed_group.selectAll(".inputs")
+      .data(function(d) { return d.inputs || [] })
+      .enter().append(exposed_input)
+      
+    exposed_group.selectAll(".outputs")
+      .data(function(d) { return d.outputs || [] })
+      .enter().append(exposed_output)
       
     // unique id will be assigned to module when created...
     svg.selectAll(".module")
@@ -234,11 +256,11 @@ function editor(data, autosize_modules) {
   editor.export = function() {
     // strip the internally-used module_id on the way out
     var export_data = extend(true, {}, svg.datum());
-    if (export_data.modules) {
-      export_data.modules.forEach(function(m) {
-        delete m.module_id;
-      });
-    }
+    //if (export_data.modules) {
+    //  export_data.modules.forEach(function(m) {
+    //    delete m.module_id;
+    //  });
+    //}
     return export_data;
   }
   
@@ -253,9 +275,10 @@ function editor(data, autosize_modules) {
     // first the modules...
     svg.datum({modules: [], wires: []});
     svg.datum().modules = import_data.modules;
+    // then renumber them...
     editor.update();
-    // then the wires...
-    svg.datum().wires = import_data.wires;
+    // then import everything else...
+    svg.datum(import_data);
     editor.update();
   }
   
@@ -275,18 +298,18 @@ function editor(data, autosize_modules) {
   var wireaction = d3.behavior.drag()
       .on("dragstart.wire", wirestart)
       .on("drag.wire", wirepull)
-      .on("dragend.wire", wirestop)
+      .on("dragend.wire", wirestop);
   
   var active_wire = false,
       new_wiredata = null;
       
   function wirestart() {
-    var module_el = this.parentNode.parentNode;
-    if (!d3.select(module_el).classed("wireable")) {return}
+    var parent_el = this.parentNode.parentNode;
+    if (!d3.select(parent_el).classed("wireable")) {return}
     currentEvent.sourceEvent.stopPropagation();
     d3.select(this).classed("highlight", true);
     var terminal_id = d3.select(this).attr("terminal_id");
-    var module_index = d3.select(module_el).attr("index");
+    var module_index = d3.select(parent_el).attr("index");
     var address = [parseInt(module_index),  terminal_id];
     new_wiredata = {source: null, target: null}
     var dest_selector = (this.classList.contains("input")) ? ".wireable .output" : ".wireable .input";
@@ -301,6 +324,7 @@ function editor(data, autosize_modules) {
       new_wiredata.target = "cursor";
     }
     active_wire = true;
+    // add new wire to list of wires in data... but move to "exposed_wires" on stop if needed
     svg.datum().wires.push(new_wiredata);
     update();
   }
@@ -308,6 +332,7 @@ function editor(data, autosize_modules) {
     function wirestop() {
       d3.select(this).classed("highlight", false);
       var active_data = new_wiredata; // d3.select(active_wire).datum();
+      var is_exposed = false;
       if (this.classList.contains("input")) {
         var new_src = d3.select(".output.highlight");
         if (!new_src.empty()) {
@@ -324,6 +349,11 @@ function editor(data, autosize_modules) {
       }
       if (active_data.target == 'cursor' || active_data.source == 'cursor') {
           active_wire = false;
+      }
+      else if (active_data.target[0] < 0 || active_data.source[0] < 0) {
+        // -1 index means exposed wire: transfer to exposed_wires:
+        exposed_wires.push(active_data);
+        active_wire = false;
       }
       var matches = svg.datum().wires.filter(function(d) {
           return (d.target == active_data.target && d.source == active_data.source)
@@ -353,14 +383,13 @@ function editor(data, autosize_modules) {
     // lookup first from module_data, then editor instance.
     var is_embedded_module = ('module_def' in module_data);
     var module_def = module_data.module_def || module_defs[module_data.module] || {};
-    var input_terminals = module_def.inputs || [];
-    var output_terminals = module_def.outputs || [];
+    var input_terminals = extend(true, [], (module_def.inputs || []));
+    var output_terminals = extend(true, [], (module_def.outputs || []));
     if (is_embedded_module) {
       input_terminals = input_terminals.map(function(t) { return resolve_terminal(module_def, 'inputs', t) });
       output_terminals = output_terminals.map(function(t) { return resolve_terminal(module_def, 'outputs', t) });
     }
 
-    var padding = 5;
     var min_width = 75;
     var active_wire, new_wiredata;
     
@@ -488,6 +517,42 @@ function editor(data, autosize_modules) {
     return connector.node();
   }
   
+  function exposed_input(input_data) {
+    var input_group = d3.select(this).append("g")
+      .datum(input_data)
+      .classed("inputs ", true)
+      
+    var width = 20;
+    var height = 20 + padding * 2;
+    
+    input_group.append("rect")
+      .classed("terminal", true)
+      .classed("output", true)
+      .classed("exposed", true)
+      .attr("width", width)
+      .attr("height", height)
+      
+    return input_group.node();
+  }
+  
+  function exposed_output(output_data) {
+    var output_group = d3.select(this).append("g")
+      .datum(output_data)
+      .classed("outputs ", true)
+      
+    var width = 20;
+    var height = 20 + padding * 2;
+    
+    input_group.append("rect")
+      .classed("terminal", true)
+      .classed("input", true)
+      .classed("exposed", true)
+      .attr("width", width)
+      .attr("height", height)
+      
+    return output_group.node();
+  }
+    
   function resolve_terminal(module_def, side, terminal) {
     // side is 'inputs' or 'outputs'
     var target_module_index = terminal.target[0];
