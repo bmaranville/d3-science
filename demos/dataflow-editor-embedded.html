@@ -115,15 +115,38 @@ var x0 = 150,
     dx = 135,
     dy = 40;
 
-var module_opts = [
-{
+example = {
+  "inputs": [
+    {
+      "id": "input_0",
+      "target": [
+        10,
+        "base"
+      ]
+    },
+    {
+      "id": "input_1",
+      "target": null
+    }
+  ],
+  "outputs": [
+    {
+      "id": "output_0",
+      "target": [
+        10,
+        "output"
+      ]
+    }
+  ],
+  "modules": [
+    {
       "title": "load spec long title",
       "module": "ncnr.refl.super_load",
       "config": {
         "intent": "specular"
       },
-      "x": 150,
-      "y": 100
+      "x": 85,
+      "y": 80
     },
     {
       "title": "load bg",
@@ -188,63 +211,112 @@ var module_opts = [
     {
       "title": "normalize",
       "module": "ncnr.refl.divide_intensity",
-      "x": 690,
-      "y": 140
+      "x": 710,
+      "y": 30
     }
-];
-
-example = {
-    //modules: expand_module_defs(module_opts, 'ncnr.refl'),
-    inputs: [
-      {"id": "input_0", "target": [10, "base"]},
-      {"id": "input_1", "target": null}
-    ],
-    outputs: [
-      {"id": "output_0", "target": [10, "output"]}
-    ],
-    modules: module_opts,
-    wires: [
+  ],
+  "wires": [
     {
-      "source": [0, "output"],
-      "target": [3, "data"]
+      "source": [
+        0,
+        "output"
+      ],
+      "target": [
+        3,
+        "data"
+      ]
     },
     {
-      "source": [1, "output"],
-      "target": [4, "data"]
+      "source": [
+        1,
+        "output"
+      ],
+      "target": [
+        4,
+        "data"
+      ]
     },
     {
-      "source": [2, "output"],
-      "target": [5, "data"]
+      "source": [
+        2,
+        "output"
+      ],
+      "target": [
+        5,
+        "data"
+      ]
     },
     {
-      "source": [3, "output"],
-      "target": [6, "data"]
+      "source": [
+        3,
+        "output"
+      ],
+      "target": [
+        6,
+        "data"
+      ]
     },
     {
-      "source": [4, "output"],
-      "target": [7, "data"]
+      "source": [
+        4,
+        "output"
+      ],
+      "target": [
+        7,
+        "data"
+      ]
     },
     {
-      "source": [5, "output"],
-      "target": [8, "data"]
+      "source": [
+        5,
+        "output"
+      ],
+      "target": [
+        8,
+        "data"
+      ]
     },
     {
-      "source": [6, "output"],
-      "target": [9, "data"]
+      "source": [
+        6,
+        "output"
+      ],
+      "target": [
+        9,
+        "data"
+      ]
     },
     {
-      "source": [7, "output"],
-      "target": [9, "backp"]
+      "source": [
+        7,
+        "output"
+      ],
+      "target": [
+        9,
+        "backp"
+      ]
     },
     {
-      "source": [8, "output"],
-      "target": [9, "backm"]
+      "source": [
+        8,
+        "output"
+      ],
+      "target": [
+        9,
+        "backm"
+      ]
     },
     {
-      "source": [9, "output"],
-      "target": [10, "data"]
+      "source": [
+        9,
+        "output"
+      ],
+      "target": [
+        10,
+        "data"
+      ]
     }
-    ]
+  ]
 }
 
 function expand_module_defs(modules, instrument) {
@@ -348,16 +420,53 @@ e.svg().on('contextmenu',function (d,i) {
             .style("top", d3.event.y + "px")
             .append("ul")
             
-            popup.append("li").text("configure").on("click", function() {alert("implement configure"); d3.select(".popup").remove(); contextMenuShowing=false;});
-            popup.append("hr")
-            popup.append("li").text("delete").on("click", function() {
-                console.log(d3_target.datum().module_id);
-                var module_id = d3_target.datum().module_id;
-                e.svg().datum().modules = e.svg().datum().modules.filter(function(d) { return d.module_id != module_id});
-                d3.select(".popup").remove(); 
-                e.update();
-                contextMenuShowing=false;
+            var active_data = d3_target.datum();
+            var module_index = d3_target.node().parentNode.parentNode.getAttribute("index");
+            var module_def = active_data.module_def || e.module_defs()[active_data.module];
+            var fields = module_def.fields || [];
+            popup.append("li").text("configure").on("click", function() {
+              alert("implement configure");
+              d3.select(".popup").remove(); 
+              contextMenuShowing=false;
             });
+            popup.append("hr");
+            popup.append("li").append("span").text("fields").style("font-weight", "bold")
+            var expose_fields = popup.append("li").append("ul");
+            var fields_list = expose_fields.selectAll("li").data(fields)
+              .enter().append("li")
+            fields_list.append("span")
+                .text(function(d) { return d.id + " exposed as: " })
+            fields_list.append("input")
+              .attr("type", "text")
+              .classed("exposed_as", true)
+              .attr("value", function(d) { return d.id })
+              .attr("size", "10")
+            fields_list.append("input")
+              .attr("type", "checkbox")
+              .property("checked", function(d) { return check_exposed(module_index, d.id) })
+              .on("change", function(d) {
+                var exposed_as = d3.select(this.parentNode).select("input.exposed_as").node().value;
+                var success = set_field(this.checked, module_index, d.id, exposed_as);
+                if (!success) { this.checked = false }
+              });
+            popup.append("hr")
+            var buttons = popup.append("li").style("text-align", "right")
+            buttons
+              .append("button").text("dismiss")
+                .on("click", function() {
+                  d3.select(".popup").remove(); 
+                  e.update();
+                  contextMenuShowing=false;
+                });
+            buttons
+              .append("button").text("delete module")
+                .on("click", function() {
+                  var module_id = d3_target.datum().module_id;
+                  e.svg().datum().modules = e.svg().datum().modules.filter(function(d) { return d.module_id != module_id});
+                  d3.select(".popup").remove(); 
+                  e.update();
+                  contextMenuShowing=false;
+                });
         }
         else if ((d3_target.classed("input") || d3_target.classed("output")) && d3_target.classed("exposed")) {
             d3.event.preventDefault();
@@ -393,6 +502,49 @@ e.svg().on('contextmenu',function (d,i) {
     }
 })
 
+function set_field(enabled, module_index, fieldname, exposed_name) {
+  if (enabled) {
+    return expose_field(module_index, fieldname, exposed_name)
+  }
+  else {
+    return unexpose_field(module_index, fieldname, exposed_name)
+  }
+}
+
+function expose_field(module_index, fieldname, exposed_name) {
+  var data = e.svg().datum();
+  // check if this exposed name already exists:
+  data.fields = data.fields || [];
+  var existing_names = data.fields.map(function(f) { return f.id });
+  if (existing_names.indexOf(exposed_name) > -1) {
+    alert("this name is already used");
+    return false
+  }
+  data.fields.push({
+    "id": exposed_name,
+    "target": [parseInt(module_index), fieldname]
+  });
+  return true
+}
+
+function unexpose_field(module_index, fieldname) {
+  var data = e.svg().datum();
+  data.fields = data.fields || [];
+  data.fields = data.fields.filter(function(f) { 
+    return !(f.target && f.target[0] == parseInt(module_index) && f.target[1] == fieldname)
+  });
+  return true
+}
+
+function check_exposed(module_index, fieldname) { 
+  var data = e.svg().datum();
+  var fields = data.fields || [];
+  var matching = fields.filter(function(f) { 
+    return (f.target && f.target[0] == parseInt(module_index) && f.target[1] == fieldname)
+  })
+  return (matching.length > 0)
+}
+  
 var module_defs = instruments[current_instrument].modules,
     module_names = (["Add new module:"]).concat(Object.keys(module_defs));
     

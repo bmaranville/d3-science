@@ -91,21 +91,26 @@ function editor(data, autosize_modules) {
   }
   
   function reindex_exposed(index_updates) {
-    var inputs = svg.datum().inputs || [];
-    var outputs = svg.datum().outputs || [];
+    var datum = svg.datum();
+    var inputs = data.inputs || [];
+    var outputs = datum.outputs || [];
+    var fields = datum.fields || [];
     function reindex(t) {
       var target = t.target;
       if (target && target != 'cursor' && target.length == 2) {
         var index_in = target[0];
         var terminal_id = target[1];
         if (index_in in index_updates) {
-          //console.log('rewiring ' + end + ' ' + index_in + ' to ' + index_updates[index_in]);
-          t.target = [index_updates[index_in], terminal_id];
+          var new_target = (index_updates[index_in] == undefined) ? null : [index_updates[index_in], terminal_id];
+          t.target = new_target;
         }
       }
     }
     inputs.forEach(reindex);
     outputs.forEach(reindex);
+    fields.forEach(reindex);
+    // remove exposed fields when the target module goes away...
+    datum.fields = fields.filter(function(f) { return f.target != null });
   }
   
   function generate_exposed_wires() {
@@ -157,7 +162,7 @@ function editor(data, autosize_modules) {
     
     // moves endpoints when index shifts because of deletions below in the list of modules
     rewire(index_updates);
-    reindex_exposed(index_updates);
+    reindex_exposed(index_updates, true);
     
     var exposed_inputs_update = svg.selectAll("g.exposed-terminals .inputs").data(function(d) { return d.inputs || [] });
     exposed_inputs_update.enter().append(exposed_input);
@@ -602,6 +607,9 @@ function editor(data, autosize_modules) {
         .attr("wireoffset_y", height/2)
         .attr("terminal_id", function(d,i) { return d.id })
         .call(wireaction)
+        .append("svg:title")
+          .text(function(d) { return d.id; });
+          
     return exposed_group.node();
   }
   
@@ -627,6 +635,9 @@ function editor(data, autosize_modules) {
         .attr("wireoffset_y", height/2)
         .attr("terminal_id", function(d,i) { return d.id })
         .call(wireaction)
+        .append("svg:title")
+          .text(function(d) { return d.id; });
+          
     return exposed_group.node();
   }
     
