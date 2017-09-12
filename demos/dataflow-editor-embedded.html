@@ -74,19 +74,24 @@ g.module rect.terminal {
   cursor: crosshair;
 }
 
-rect.terminal.output {
+rect.terminal.output, rect.terminal.exposed.input {
   fill: #88FFFF;
 }
 
-rect.terminal.input {
+rect.terminal.input, rect.terminal.exposed.output {
   fill:  #88FF88;
 }
 
-path.wire {
+path.wire, path.exposed-wire {
   fill: none;
   stroke-width: 5px;
   stroke: red;
   cursor: crosshair;
+}
+
+path.exposed-wire {
+  stroke: blue;
+  stroke-opacity: 0.4;
 }
 
 polygon.terminal.state {
@@ -191,7 +196,11 @@ var module_opts = [
 example = {
     //modules: expand_module_defs(module_opts, 'ncnr.refl'),
     inputs: [
-      {"target": [10, "base"]}
+      {"id": "input_0", "target": [10, "base"]},
+      {"id": "input_1", "target": null}
+    ],
+    outputs: [
+      {"id": "output_0", "target": [10, "output"]}
     ],
     modules: module_opts,
     wires: [
