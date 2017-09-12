@@ -387,14 +387,13 @@ function editor(data, autosize_modules) {
       else {
         if (active_data.target[0] < 0) { 
           // -1 index means exposed wire: transfer to exposed_wires:
-          svg.datum().outputs.push({"target": active_data.source});
+          var to_change = svg.datum().outputs.filter(function(f) { return f.id == active_data.target[1] })[0];
+          to_change.target = active_data.source;
           active_wire = false;
         }
         if (active_data.source[0] < 0) {
           var to_change = svg.datum().inputs.filter(function(f) { return f.id == active_data.source[1] })[0];
           to_change.target = active_data.target;
-          
-          //svg.datum().inputs.push({"target": active_data.target});
           active_wire = false;
         }
       }
