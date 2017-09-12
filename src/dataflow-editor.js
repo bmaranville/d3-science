@@ -48,8 +48,7 @@ function editor(data, autosize_modules) {
   var wiredrag_cancelled = false;
   var exposed_wires = [];
   var dispatch = d3.dispatch("update", "draw_wires");
-  dispatch.on("update", update);
-  dispatch.on("draw_wires", draw_wires);
+  editor.dispatch = dispatch;
   
   var wire_keyfn = function(d) {return "{source: " + d.source + "," + "target: " + d.target + "}"};
   var check_end = function(e) {
@@ -186,11 +185,13 @@ function editor(data, autosize_modules) {
     wire_update.exit().remove();
     
     draw_wires();
+    dispatch.update();
   }
   
   function draw_wires() {
     svg.selectAll(".wire").each(draw_wire)
     svg.selectAll(".exposed-wire").each(draw_wire)
+    dispatch.draw_wires();
   }
   
   function get_terminal_pos(term_id) {
@@ -233,7 +234,7 @@ function editor(data, autosize_modules) {
             break;
           }
         };
-        //dispatch.update();
+        update();
     }
     else {
       connector.attr("d", makeConnector(src_pos, tgt_pos));
@@ -275,7 +276,7 @@ function editor(data, autosize_modules) {
       .data(function(d) {return d.wires})
       .enter().append(wire)
    
-    dispatch.update();
+    update();
   }
   
   // wirecurve is usually between 0 and 1

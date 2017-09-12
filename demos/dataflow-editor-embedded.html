@@ -570,6 +570,18 @@ d3.select("#show_example").on("click", function() {
   e.import(example);
 });
 
+e.dispatch.on("update", function() { 
+  var datum = e.svg().datum();
+  var fields = datum.fields || [];
+  e.svg().selectAll("g.module g.title text").text(function(d,i) { 
+    var title = d.title;
+    if (fields.filter(function(f) { return f.target[0] == i }).length > 0) {
+      title += "*";
+    }
+    return title;
+  });
+});
+
 function loadData() {
     var file = document.getElementById('upload_template').files[0]; // only one file allowed
     datafilename = file.name;
