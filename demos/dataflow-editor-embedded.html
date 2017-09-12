@@ -359,7 +359,7 @@ e.svg().on('contextmenu',function (d,i) {
                 contextMenuShowing=false;
             });
         }
-        else if (d3_target.classed("input") || d3_target.classed("output") && d3_target.classed("exposed")) {
+        else if ((d3_target.classed("input") || d3_target.classed("output")) && d3_target.classed("exposed")) {
             d3.event.preventDefault();
             contextMenuShowing = true;
 
@@ -371,19 +371,23 @@ e.svg().on('contextmenu',function (d,i) {
             .style("top", d3.event.y + "px")
             .append("ul")
             
-            var side = d3_target.classed("input") ? "inputs" : "outputs";
+            var side = d3_target.classed("output") ? "inputs" : "outputs";
             //popup.append("li").text("configure").on("click", function() {alert("implement configure"); d3.select(".popup").remove(); contextMenuShowing=false;});
             
             popup.append("li").text("delete").on("click", function() {
-                d3.select(d3_target.node().parentNode).remove();
-                //var term_id = d3_target.datum().id;
-                //e.svg().datum()[side] = e.svg().datum()[side].filter(function(d) { return d.module_id != module_id});
+                console.log(d3_target, d3.select(d3_target.node().parentNode.parentNode));
+                //d3.select(d3_target.node().parentNode.parentNode).remove();
+                var term_id = d3_target.datum().id;
+                console.log(term_id);
+                e.svg().datum()[side] = e.svg().datum()[side].filter(function(d) { 
+                  return d.id != term_id
+                });
                 d3.select(".popup").remove(); 
                 e.update();
                 contextMenuShowing=false;
             });
-            refresh_inputs();
-            refresh_outputs();
+            //refresh_inputs();
+            //refresh_outputs();
         }
                      
     }
@@ -424,52 +428,6 @@ function loadData() {
         e.import(template);
     }
     reader.readAsText(file);
-}
-
-function refresh_inputs() {
-  var height = 25;
-  var width = 20;
-  var center_y = (window.innerHeight / 2.0) - (exposed_inputs.length * height / 2.0);
-  var inputs_selection = e.svg().selectAll("g.exposed-inputs").data(exposed_inputs)
-  inputs_selection
-    .enter().append("g").classed("exposed-inputs", true)
-    .classed("module wireable", true)
-      .append("rect")
-      .classed("terminal", true)
-      .classed("input", true)
-      .classed("exposed", true)
-      .attr("width", width)
-      .attr("height", height)
-  inputs_selection
-    .exit().remove();
-  inputs_selection
-    .attr("transform", function(d,i) { return "translate(0, " + (center_y + (height * i)).toFixed() + ")"})
-  
-  e.svg().selectAll("g.exposed-inputs rect")
-    .attr("index", function(d,i) { return i })
-}
-
-function refresh_outputs() {
-  var height = 25;
-  var width = 20;
-  var center_y = (window.innerHeight / 2.0) - (exposed_inputs.length * height / 2.0);
-  var inputs_selection = e.svg().selectAll("g.exposed-outputs").data(exposed_inputs)
-  inputs_selection
-    .enter().append("g").classed("exposed-inputs", true)
-    .classed("module wireable", true)
-      .append("rect")
-      .classed("terminal", true)
-      .classed("input", true)
-      .classed("exposed", true)
-      .attr("width", width)
-      .attr("height", height)
-  inputs_selection
-    .exit().remove();
-  inputs_selection
-    .attr("transform", function(d,i) { return "translate(0, " + (center_y + (height * i)).toFixed() + ")"})
-  
-  e.svg().selectAll("g.exposed-inputs rect")
-    .attr("index", function(d,i) { return i })
 }
 
 d3.select("#upload_template").on("change", loadData);

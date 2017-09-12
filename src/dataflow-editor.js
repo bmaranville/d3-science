@@ -45,6 +45,7 @@ function editor(data, autosize_modules) {
   var padding = 5;
   var wirecurve = 0.67;
   var svg, container;
+  var wiredrag_cancelled = false;
   var exposed_wires = [];
   var dispatch = d3.dispatch("update", "draw_wires");
   dispatch.on("update", update);
@@ -99,7 +100,7 @@ function editor(data, autosize_modules) {
         var terminal_id = target[1];
         if (index_in in index_updates) {
           //console.log('rewiring ' + end + ' ' + index_in + ' to ' + index_updates[index_in]);
-          target = [index_updates[index_in], terminal_id];
+          t.target = [index_updates[index_in], terminal_id];
         }
       }
     }
@@ -338,9 +339,14 @@ function editor(data, autosize_modules) {
       new_wiredata = null;
       
   function wirestart() {
-    var parent_el = this.parentNode.parentNode;
-    if (!d3.select(parent_el).classed("wireable")) {return}
     currentEvent.sourceEvent.stopPropagation();
+    var parent_el = this.parentNode.parentNode;
+    if (currentEvent.sourceEvent.button > 0 || !d3.select(parent_el).classed("wireable")) {
+      wiredrag_cancelled = true;
+      return
+    }
+    wiredrag_cancelled = false;
+    var parent_el = this.parentNode.parentNode;
     d3.select(this).classed("highlight", true);
     var terminal_id = d3.select(this).attr("terminal_id");
     var module_index = d3.select(parent_el).attr("index");
@@ -364,6 +370,8 @@ function editor(data, autosize_modules) {
   }
     
     function wirestop() {
+      currentEvent.sourceEvent.stopPropagation();
+      if (wiredrag_cancelled) { return }
       d3.select(this).classed("highlight", false);
       var active_data = new_wiredata; // d3.select(active_wire).datum();
       var is_exposed = false;
@@ -381,7 +389,7 @@ function editor(data, autosize_modules) {
           active_data.target = [parseInt(module_index), new_tgt.attr("terminal_id")];
         }
       }
-      if (active_data.target == 'cursor' || active_data.source == 'cursor') {
+      if (!active_data || active_data.target == 'cursor' || active_data.source == 'cursor') {
           active_wire = false;
       }
       else {
@@ -398,12 +406,16 @@ function editor(data, autosize_modules) {
         }
       }
       
-      var matches = svg.datum().wires.filter(function(d) {
+      if (active_wire) {
+        var matches = svg.datum().wires.filter(function(d) {
           return (d.target == active_data.target && d.source == active_data.source)
-      });
+        });
+        if (matches.length > 1) { active_wire = false }
+      }
+      
       // active wire should be the last added: check for existing
       // if not successful target or source match, or if duplicate: pop
-      if (!active_wire || matches.length > 1) { svg.datum().wires.pop() }
+      if (!active_wire) { svg.datum().wires.pop() }
       update();
       svg.selectAll(".terminal")
         .classed("highlight", false)
