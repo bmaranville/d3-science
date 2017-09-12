@@ -122,12 +122,11 @@ function editor(data, autosize_modules) {
       }
     }
     
-    var exposed_group = svg.selectAll(".exposed-terminals");
     
-    var exposed_inputs_update = svg.selectAll(".exposed-terminals .inputs").data(function(d) { return d.inputs || [] });
+    var exposed_inputs_update = svg.selectAll("g.exposed-terminals .inputs").data(function(d) { return d.inputs || [] });
     exposed_inputs_update.enter().append(exposed_input);
     exposed_inputs_update.exit().remove();
-    var exposed_outputs_update = exposed_group.selectAll(".outputs").data(function(d) { return d.outputs || [] });
+    var exposed_outputs_update = svg.selectAll("g.exposed-outputs").data(function(d) { return d.outputs || [] });
     exposed_outputs_update.enter().append(exposed_output);
     exposed_outputs_update.exit().remove();
     
@@ -212,16 +211,12 @@ function editor(data, autosize_modules) {
     svg = selection.selectAll("svg.editor").data(data)
       .enter().append("svg")
       .classed("editor", true)
-    
-    var exposed_group = svg.append("g")
-      .classed("exposed-terminals", true)
-      .classed("wireable", true)
       
-    exposed_group.selectAll(".inputs")
+    svg.selectAll(".exposed-inputs")
       .data(function(d) { return d.inputs || [] })
       .enter().append(exposed_input)
       
-    exposed_group.selectAll(".outputs")
+    svg.selectAll(".exposed-outputs")
       .data(function(d) { return d.outputs || [] })
       .enter().append(exposed_output)
       
@@ -350,11 +345,18 @@ function editor(data, autosize_modules) {
       if (active_data.target == 'cursor' || active_data.source == 'cursor') {
           active_wire = false;
       }
-      else if (active_data.target[0] < 0 || active_data.source[0] < 0) {
-        // -1 index means exposed wire: transfer to exposed_wires:
-        exposed_wires.push(active_data);
-        active_wire = false;
+      else {
+        if (active_data.target[0] < 0) { 
+          // -1 index means exposed wire: transfer to exposed_wires:
+          svg.datum().outputs.push({"target": active_data.source});
+          active_wire = false;
+        }
+        if (active_data.source[0] < 0) {
+          svg.datum().inputs.push({"target": active_data.target});
+          active_wire = false;
+        }
       }
+      
       var matches = svg.datum().wires.filter(function(d) {
           return (d.target == active_data.target && d.source == active_data.source)
       });
@@ -518,37 +520,46 @@ function editor(data, autosize_modules) {
   }
   
   function exposed_input(input_data) {
-    var input_group = d3.select(this).append("g")
-      .datum(input_data)
-      .classed("inputs ", true)
-      
     var width = 20;
     var height = 20 + padding * 2;
     
-    input_group.append("rect")
-      .classed("terminal", true)
-      .classed("output", true)
-      .classed("exposed", true)
-      .attr("width", width)
-      .attr("height", height)
+    //var exposed_group = document.createElementNS("http://www.w3.org/2000/svg","g");
+    
+    var exposed_group = svg.append("g")
+      .classed("exposed-terminals wireable", true)
+      .datum(input_data)
+      .attr("index", "-1")
       
-    return input_group.node();
+    exposed_group.append('g')
+      .classed('inputs', true)
+      .append('rect')
+        .classed("terminal", true)
+        .classed("output", true)
+        .classed("exposed", true)
+        .attr("width", width)
+        .attr("height", height)
+        .attr("terminal_id", function(d,i) { return "output_" + i.toFixed() })
+        .call(wireaction)
+    return exposed_group.node();
   }
   
   function exposed_output(output_data) {
     var output_group = d3.select(this).append("g")
       .datum(output_data)
-      .classed("outputs ", true)
+      .classed("exposed-outputs ", true)
+      .classed("wireable", true)
+      .append("g")
       
     var width = 20;
     var height = 20 + padding * 2;
     
-    input_group.append("rect")
+    output_group.append("rect")
       .classed("terminal", true)
       .classed("input", true)
       .classed("exposed", true)
       .attr("width", width)
       .attr("height", height)
+      .call(wireaction)
       
     return output_group.node();
   }
