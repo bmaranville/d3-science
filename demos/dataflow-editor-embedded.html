@@ -331,9 +331,8 @@ function expand_module_defs(modules, instrument) {
   return output
 }
 
-e = new dataflowEditor.editor(null, true);
+e = new dataflowEditor.editor();
 e.module_defs(instruments[current_instrument].modules);
-e.data([{modules: [], wires: []}]);
 d3.select("#editor_div").call(e);
 
 

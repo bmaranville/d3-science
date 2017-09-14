@@ -38,17 +38,24 @@ if (!d3.hasOwnProperty("id")) {
   d3.id = (function(){var a = 0; return function(){return a++}})();
 }
 
-function editor(data, autosize_modules) {
-  var data = data || [];
-  var module_defs = module_defs || {};
-  var grid_spacing = 5;
-  var padding = 5;
-  var wirecurve = 0.67;
+function editor(options) {
+  var module_defs = {};
+  var default_options = {
+    padding: 5,
+    grid_spacing: 5,
+    // wirecurve is usually between 0 and 1
+    // if 0, gives a straight-line wire connector
+    // if 1, a cubic curve vertical in the middle
+    wirecurve: 0.67,
+    min_width: 75,
+    min_height: 20,
+    autosize_modules: true
+  }
+  var options = extend(true, default_options, options);
   var svg, container;
   var wiredrag_cancelled = false;
   var exposed_wires = [];
   var dispatch = d3.dispatch("update", "draw_wires");
-  editor.dispatch = dispatch;
   
   var wire_keyfn = function(d) {return "{source: " + d.source + "," + "target: " + d.target + "}"};
   var check_end = function(e) {
@@ -91,7 +98,7 @@ function editor(data, autosize_modules) {
   
   function reindex_exposed(index_updates) {
     var datum = svg.datum();
-    var inputs = data.inputs || [];
+    var inputs = datum.inputs || [];
     var outputs = datum.outputs || [];
     var fields = datum.fields || [];
     function reindex(t) {
@@ -246,16 +253,16 @@ function editor(data, autosize_modules) {
     var dx = Math.abs(+(pt1.x) - +(pt2.x)),
         dy = Math.abs(+(pt1.y) - +(pt2.y));
     d  = "M" + pt1.x + "," + pt1.y + " ";
-    d += "C" + (+(pt1.x) + wirecurve*dx).toFixed() + "," + pt1.y + " ";
-    d +=       (+(pt2.x) - wirecurve*dx).toFixed() + "," + pt2.y + " ";
+    d += "C" + (+(pt1.x) + options.wirecurve*dx).toFixed() + "," + pt1.y + " ";
+    d +=       (+(pt2.x) - options.wirecurve*dx).toFixed() + "," + pt2.y + " ";
     d +=       pt2.x + "," + pt2.y;
     return d;
   }
   
-  function editor(selection) {
+  function editor(selection, datum) {
     container = selection; // store for later use
-    svg = selection.selectAll("svg.editor").data(data)
-      .enter().append("svg")
+    var datum = datum || {modules: [], wires: []};
+    svg = selection.append("svg").datum(datum)
       .classed("editor", true)
       
     svg.selectAll(".exposed-inputs")
@@ -279,20 +286,7 @@ function editor(data, autosize_modules) {
     update();
   }
   
-  // wirecurve is usually between 0 and 1
-  // if 0, gives a straight-line wire connector
-  // if 1, a cubic curve vertical in the middle
-  editor.wirecurve = function(_) {
-    if (!arguments.length) { return wirecurve }
-    wirecurve = _;
-    return editor;
-  }
-  
-  editor.data = function(_) {
-    if (!arguments.length) { return svg.data() }
-    data = _;
-    return editor;
-  }
+  editor.dispatch = dispatch;
   
   editor.export = function() {
     // strip the internally-used module_id on the way out
@@ -306,20 +300,13 @@ function editor(data, autosize_modules) {
   }
   
   editor.import = function(datum) {
-    // strip module_id on the way in - needed internally
-    var import_data = extend(true, {}, datum);
-    if (import_data.modules) {
-      import_data.modules.forEach(function(m) {
-        delete m.module_id;
-      });
-    }
     // first the modules...
     svg.datum({modules: [], wires: []});
-    svg.datum().modules = import_data.modules;
+    svg.datum().modules = datum.modules;
     // then renumber them...
     editor.update();
     // then import everything else...
-    svg.datum(import_data);
+    extend(true, svg.datum(), datum);
     editor.update();
   }
   
@@ -451,7 +438,8 @@ function editor(data, autosize_modules) {
       output_terminals = output_terminals.map(function(t) { return resolve_terminal(module_def, 'outputs', t) });
     }
 
-    var min_width = 75;
+    var padding = options.padding;
+    var grid_spacing = options.grid_spacing;
     var active_wire, new_wiredata;
     
     var drag = d3.behavior.drag()
@@ -475,8 +463,8 @@ function editor(data, autosize_modules) {
       .attr("x-origin", module_data.x.toFixed())
       .attr("y-origin", module_data.y.toFixed())
       
-      var width = 75 + (padding * 2);
-      var height = 20 + padding * 2;
+      var width = options.min_width + (padding * 2);
+      var height = options.min_height + (padding * 2);
       
       var title = group.append("g")
         .classed("title", true)
@@ -489,7 +477,7 @@ function editor(data, autosize_modules) {
         .attr("y", padding)
         .attr("dy", "1em")
       
-      if (autosize_modules) {
+      if (options.autosize_modules) {
         var text_width = titletext.node().getComputedTextLength() + (padding * 2);
         width = Math.max(text_width, width);
       }
@@ -586,7 +574,7 @@ function editor(data, autosize_modules) {
   
   function exposed_input(input_data, i) {
     var width = 20;
-    var height = 20 + padding * 2;
+    var height = 20 + (options.padding * 2);
     
     //var exposed_group = document.createElementNS("http://www.w3.org/2000/svg","g");
     
@@ -616,7 +604,8 @@ function editor(data, autosize_modules) {
   
   function exposed_output(output_data, i) {
     var width = 20;
-    var height = 20 + padding * 2;
+    var height = 20 + (options.padding * 2);
+    
     var svg_width = svg.node().width.baseVal.value;
     var exposed_group = svg.append("g")
       .classed("exposed-terminals wireable", true)
