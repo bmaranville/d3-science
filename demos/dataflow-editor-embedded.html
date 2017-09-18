@@ -123,6 +123,7 @@ polygon.terminal.state {
 <script src="../lib/jquery-extend.js"></script>
 <!--<script src="dataflow-box-module.js"></script>-->
 <script src="../lib/dataflow-editor.js"></script>
+<script src="embedded_template_example.js"></script>
 <script src="ncnr.refl.module_defs.js"></script>
 <script>
 window.onload = function() {
@@ -134,292 +135,7 @@ var x0 = 150,
     dx = 135,
     dy = 40;
 
-example = {
-  "inputs": [
-    {
-      "id": "input_0",
-      "target": [
-        10,
-        "base"
-      ]
-    },
-    {
-      "id": "input_1",
-      "target": null
-    }
-  ],
-  "outputs": [
-    {
-      "id": "output_0",
-      "target": [
-        10,
-        "output"
-      ]
-    }
-  ],
-  "modules": [
-    {
-      "config": {},
-      "title": "fancy load",
-      "x": 85,
-      "y": 80,
-      "module_def": {
-        "name": "my module",
-        "fields": [
-          {"id": "specular", "target": [0, "filelist"]},
-          {"id": "detector_np", "target": [1, "nonparalyzing"]},
-          {"id": "detector_p", "target": [1, "paralyzing"]}
-        ],
-        "inputs": [],
-        "outputs": [
-          {"id": "output", "target": [4, "output"]}
-        ],
-        "modules": [
-          {
-            "module": "ncnr.refl.ncnr_load",
-            "title": "Ncnr Load (cached)",
-            "x": 10,
-            "y": 25
-          },
-          {
-            "module": "ncnr.refl.detector_dead_time",
-            "title": "Detector Dead Time",
-            "x": 360,
-            "y": 25
-          },
-          {
-            "module": "ncnr.refl.monitor_dead_time",
-            "title": "Monitor Dead Time",
-            "x": 565,
-            "y": 25
-          },
-          {
-            "module": "ncnr.refl.divergence",
-            "title": "Divergence",
-            "x": 215,
-            "y": 25
-          },
-          {
-            "module": "ncnr.refl.normalize",
-            "title": "Normalize",
-            "x": 765,
-            "y": 25
-          }
-        ],
-        "wires": [
-          {
-            "source": [
-              1,
-              "output"
-            ],
-            "target": [
-              2,
-              "data"
-            ]
-          },
-          {
-            "source": [
-              0,
-              "output"
-            ],
-            "target": [
-              3,
-              "data"
-            ]
-          },
-          {
-            "source": [
-              3,
-              "output"
-            ],
-            "target": [
-              1,
-              "data"
-            ]
-          },
-          {
-            "source": [
-              2,
-              "output"
-            ],
-            "target": [
-              4,
-              "data"
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "title": "load bg",
-      "module": "ncnr.refl.super_load",
-      "config": {
-        "intent": "background"
-      },
-      "x": 150,
-      "y": 140
-    },
-    {
-      "title": "load slit",
-      "module": "ncnr.refl.super_load",
-      "config": {
-        "intent": "slit"
-      },
-      "x": 150,
-      "y": 180
-    },
-    {
-      "title": "mask",
-      "module": "ncnr.refl.mask_points",
-      "x": 285,
-      "y": 100
-    },
-    {
-      "title": "mask",
-      "module": "ncnr.refl.mask_points",
-      "x": 285,
-      "y": 140
-    },
-    {
-      "title": "mask",
-      "module": "ncnr.refl.mask_points",
-      "x": 285,
-      "y": 180
-    },
-    {
-      "title": "join",
-      "module": "ncnr.refl.join",
-      "x": 420,
-      "y": 100
-    },
-    {
-      "title": "join",
-      "module": "ncnr.refl.join",
-      "x": 420,
-      "y": 140
-    },
-    {
-      "title": "join",
-      "module": "ncnr.refl.join",
-      "x": 421,
-      "y": 179
-    },
-    {
-      "title": "subtract",
-      "module": "ncnr.refl.subtract_background",
-      "x": 555,
-      "y": 100
-    },
-    {
-      "title": "normalize",
-      "module": "ncnr.refl.divide_intensity",
-      "x": 710,
-      "y": 30
-    }
-  ],
-  "wires": [
-    {
-      "source": [
-        0,
-        "output"
-      ],
-      "target": [
-        3,
-        "data"
-      ]
-    },
-    {
-      "source": [
-        1,
-        "output"
-      ],
-      "target": [
-        4,
-        "data"
-      ]
-    },
-    {
-      "source": [
-        2,
-        "output"
-      ],
-      "target": [
-        5,
-        "data"
-      ]
-    },
-    {
-      "source": [
-        3,
-        "output"
-      ],
-      "target": [
-        6,
-        "data"
-      ]
-    },
-    {
-      "source": [
-        4,
-        "output"
-      ],
-      "target": [
-        7,
-        "data"
-      ]
-    },
-    {
-      "source": [
-        5,
-        "output"
-      ],
-      "target": [
-        8,
-        "data"
-      ]
-    },
-    {
-      "source": [
-        6,
-        "output"
-      ],
-      "target": [
-        9,
-        "data"
-      ]
-    },
-    {
-      "source": [
-        7,
-        "output"
-      ],
-      "target": [
-        9,
-        "backp"
-      ]
-    },
-    {
-      "source": [
-        8,
-        "output"
-      ],
-      "target": [
-        9,
-        "backm"
-      ]
-    },
-    {
-      "source": [
-        9,
-        "output"
-      ],
-      "target": [
-        10,
-        "data"
-      ]
-    }
-  ]
-}
+
 
 function expand_module_defs(modules, instrument) {
   var output = [],
@@ -433,7 +149,7 @@ function expand_module_defs(modules, instrument) {
   return output
 }
 
-e = new dataflowEditor.editor();
+e = new dataflowEditor.default(); //Class2.editorFactory();
 e._outer = []; // contexts for embedded templates;
 e.module_defs(instruments[current_instrument].modules);
 d3.select("#editor_div").call(e);
@@ -441,7 +157,7 @@ d3.select("#editor_div").call(e);
 
 var contextMenuShowing = false;
 
-e.svg().on('contextmenu',function (d,i) {
+e.container.on('contextmenu',function (d,i) {
     if (contextMenuShowing) {
         d3.event.preventDefault();
         d3.select(".popup").remove();
@@ -709,6 +425,54 @@ pathDataToString = function(pathData) {
   return ps;
 }
 
+explode2 = function(module, current_template, callback) {
+  //transform="matrix(sx, 0, 0, sy, cx-sx*cx, cy-sy*cy)"
+  var svg_width = e.svg().node().width.baseVal.value;
+  var svg_height = e.svg().node().height.baseVal.value;
+  var current_width = module.select("rect.title").attr("width");
+  var current_height = module.select("rect.title").attr("height");
+  var m_id = module.datum().module_id;
+  var cx = module.datum().x;
+  var cy = module.datum().y;
+  var d = 1000;
+  
+  var outer_svg = e.svg();
+  
+  outer_svg.style("transform-origin", cx + "px " + cy + "px");
+  module.select("text.title").style("display", "none");
+  var other_modules = outer_svg.selectAll(".module").filter(function(d) { return d.module_id != m_id });
+  var rel_x = [], rel_y = [], radii = [];
+  other_modules.each(function(d,i) { 
+    var rx = d.x - cx;
+    var ry = d.y - cy;
+    radii[i] = Math.sqrt(Math.pow(rx, 2) + Math.pow(ry, 2));
+    rel_x[i] = rx;
+    rel_y[i] = ry;
+  })
+  var multiplier = svg_width / (Math.min.apply(Math, radii) || 1);
+  
+  //var new_svg = document.createElement("svg");
+  var new_svg = outer_svg.append("svg")
+    .attr("width", svg_width)
+    .attr("height", svg_height)
+    .style("width", null)
+    .style("height", null)
+    .attr("x", cx)
+    .attr("y", cy)
+    //.attr("preserveAspectRatio", "none")
+    .attr("transform", "scale(" + (1/multiplier) + "," + (1/multiplier) + ")")
+    //.attr("viewBox", "0 0 " + (svg_width/multiplier).toFixed(1) + " " + (svg_height/multiplier).toFixed(1));
+    .attr("viewBox", "0 0 " + svg_width.toFixed(1) + " " + svg_height.toFixed(1));
+  e.svg(new_svg);
+  
+  //var transform = "matrix(" + multiplier + ", 0, 0, " + multiplier + ", " + (cx-multiplier*cx) + "," + (cy-multiplier*cy) + ")";
+  //var transform = "matrix(" + multiplier + ", 0, 0, " + multiplier + ", 0, 0)";
+  var transform = "scale(" + multiplier + ", " + multiplier + ")";
+  console.log(transform);
+  outer_svg.transition().attr("transform", transform).duration(d)
+    .each("end", callback);
+}
+
 explode = function(module, current_template, callback) {
   var svg_width = e.svg().node().width.baseVal.value;
   var svg_height = e.svg().node().height.baseVal.value;
@@ -741,7 +505,6 @@ explode = function(module, current_template, callback) {
     rel_y[i] = ry;
   })
   var multiplier = svg_width / (Math.min.apply(Math, radii) || 1);
-  //var multiplier = 1.5;
   
   var wires = e.svg().selectAll(".wire,.exposed-wire");
 
@@ -755,18 +518,17 @@ explode = function(module, current_template, callback) {
   var output_width = 20; //parseInt(outputs.select("rect.terminal").attr("width"));
   var d = 1000;
   
-  module.transition().attr("transform", "translate(" + output_width + ",0)").duration(d);
-  border.transition().attr("width", svg_width - (output_width*2)).attr("height", svg_height-10).duration(d);
+  
   titletext.transition().attr("x", (svg_width - w)/2.0).duration(d);
   outputs.transition().attr("transform", "translate(" + (svg_width - 2*output_width).toFixed() + ",0)").duration(d);
   //other_modules.transition().style("opacity", "0").duration(d);
   other_modules.transition().attr("transform", function(d,i) { 
     return "translate(" + (cx + rel_x[i]*multiplier).toFixed() + "," + (cy + rel_y[i]*multiplier).toFixed() + ")"
   }).duration(d)
-  .each("end", callback);
-  //wires.transition().style("opacity", "0").duration(d/2);
-  //wires.transition().attr("d", function(d,i) { return new_wirepaths[i] }).duration(d);
-  //module.selectAll(".title").classed("title", false).on("dragstart", null);
+  
+  module.transition().attr("transform", "translate(" + output_width.toFixed() + ",0)").duration(d);
+  border.transition().attr("width", svg_width - (output_width*2)).attr("height", svg_height-10).duration(d)
+    .each("end", callback);
 }
 
 unexplode = function(stored_template, stored_x, stored_y) {
@@ -823,7 +585,7 @@ d3.select("#show_value").on("click", function() {
 });
 
 d3.select("#show_example").on("click", function() {
-  e.import(example);
+  e.import(embedded_template_example);
 });
 
 e.dispatch.on("update", function() { 

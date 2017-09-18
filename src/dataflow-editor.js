@@ -66,10 +66,10 @@ function editor(options) {
         var module_index = e[0],
             terminal_id = e[1];
         if (module_index > -1) {
-          return !(container.select('.module[index="' + module_index + '"] .terminal[terminal_id="' + terminal_id + '"]').empty());
+          return !(svg.select('.module[index="' + module_index + '"] .terminal[terminal_id="' + terminal_id + '"]').empty());
         }
         else {
-          return !(container.select('.exposed-terminals .terminal[terminal_id="' + terminal_id + '"]').empty());
+          return !(svg.select('.exposed-terminals .terminal[terminal_id="' + terminal_id + '"]').empty());
         }
     }
   }
@@ -203,15 +203,15 @@ function editor(options) {
   }
   
   function get_terminal_pos(term_id) {
-    var parent = (term_id[0] == "-1") ? container.selectAll('.exposed-terminals') : 
-      container.select('.module[index="' + term_id[0] + '"]');
+    var parent = (term_id[0] == "-1") ? svg.selectAll('.exposed-terminals') : 
+      svg.selectAll('g.module[index="' + term_id[0] + '"]');
     var terminal = parent.select('.terminal[terminal_id="' + term_id[1] + '"]');
     if (terminal.empty()) { return null }
     var reference_point = svg.node().createSVGPoint();
     var terminal_origin = reference_point.matrixTransform(terminal.node().getCTM());
     var terminal_pos = {
-      x: terminal_origin.x + +terminal.attr("wireoffset_x"),
-      y: terminal_origin.y + +terminal.attr("wireoffset_y")
+      x: terminal_origin.x + (+terminal.attr("wireoffset_x")),
+      y: terminal_origin.y + (+terminal.attr("wireoffset_y"))
     }
     return terminal_pos;
   }
@@ -260,69 +260,48 @@ function editor(options) {
     return d;
   }
   
-  function editor(selection, datum) {
+  function Editor(selection, datum) {
     container = selection; // store for later use
+    Editor.container = container;
+    
     var datum = datum || {modules: [], wires: []};
     svg = selection.append("svg").datum(datum)
       .classed("editor", true)
-      
-    svg.selectAll(".exposed-inputs")
-      .data(function(d) { return d.inputs || [] })
-      .enter().append(exposed_input)
-      
-    svg.selectAll(".exposed-outputs")
-      .data(function(d) { return d.outputs || [] })
-      .enter().append(exposed_output)
-      
-    // unique id will be assigned to module when created...
-    svg.selectAll(".module")
-      .data(function(d) { return d.modules }) 
-      .enter().append(module)
-      .attr("index", function(d,i) {return i});
-      
-    svg.selectAll(".wire")
-      .data(function(d) {return d.wires})
-      .enter().append(wire)
-   
+    
     update();
   }
   
-  editor.dispatch = dispatch;
+  Editor.dispatch = dispatch;
   
-  editor.export = function() {
-    // strip the internally-used module_id on the way out
-    var export_data = extend(true, {}, svg.datum());
-    //if (export_data.modules) {
-    //  export_data.modules.forEach(function(m) {
-    //    delete m.module_id;
-    //  });
-    //}
-    return export_data;
+  Editor.export = function() {
+    return extend(true, {}, svg.datum());
   }
   
-  editor.import = function(datum) {
+  Editor.import = function(datum) {
     // first the modules...
-    var dc = extend(true, {}, datum);
-    svg.datum({modules: dc.modules, wires: []});
+    //var dc = extend(true, {}, datum);
+    svg.datum({modules: datum.modules, wires: []});
     // then renumber them...
-    editor.update();
+    Editor.update();
     // then import everything else...
-    extend(true, svg.datum(), dc);
-    editor.update();
+    extend(true, svg.datum(), datum);
+    Editor.update();
   }
   
-  editor.svg = function() {
-    return svg;
+  Editor.svg = function(_) {
+    if (!arguments.length) { return svg }
+    svg = _;
+    return Editor;
   }
   
-  editor.module_defs = function(_) {
+  Editor.module_defs = function(_) {
     if (!arguments.length) {return module_defs}
     module_defs = _;
-    return editor;
+    return Editor;
   }
   
-  editor.update = update;
-  editor.draw_wires = draw_wires;
+  Editor.update = update;
+  Editor.draw_wires = draw_wires;
   
   var wireaction = d3.behavior.drag()
       .on("dragstart.wire", wirestart)
@@ -650,6 +629,6 @@ function editor(options) {
       
     
   
-  return editor;
+  return Editor;
 }
 
