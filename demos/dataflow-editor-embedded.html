@@ -4,6 +4,8 @@
 html, body {
   height: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 svg {
   width: 100%;
@@ -17,7 +19,8 @@ svg {
 
 #editor_div { 
   width: 100%;
-  height: 100%;
+  padding-bottom: 8px;
+  flex: 1;
 }
 .highlight {
   fill-opacity: 0.2 !important;
@@ -46,7 +49,7 @@ svg {
     cursor: pointer;
 }
 .popup ul li:hover {
-    background-color: LightGray;
+    /*background-color: LightGray;*/
 }
 
 .popup hr {
@@ -66,8 +69,21 @@ g.exposed-terminals rect, g.module rect {
   fill: white;
 }
 
+rect.unexplode {
+  stroke-width: 2px;
+  stroke: blue;
+  cursor: none;
+  fill: none;
+}
+
 g.module rect.title {
   fill-opacity: 0;
+}
+
+g.module rect.border.highlight {
+  fill: none;
+  stroke: blue;
+  stroke-width: 2px;
 }
 
 g.module rect.terminal { 
@@ -101,6 +117,9 @@ polygon.terminal.state {
 </style>
 <body>
 <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+<!--
+<script src="path-data-polyfill.js"></script>
+-->
 <script src="../lib/jquery-extend.js"></script>
 <!--<script src="dataflow-box-module.js"></script>-->
 <script src="../lib/dataflow-editor.js"></script>
@@ -140,13 +159,96 @@ example = {
   ],
   "modules": [
     {
-      "title": "load spec long title",
-      "module": "ncnr.refl.super_load",
-      "config": {
-        "intent": "specular"
-      },
+      "config": {},
+      "title": "fancy load",
       "x": 85,
-      "y": 80
+      "y": 80,
+      "module_def": {
+        "name": "my module",
+        "fields": [
+          {"id": "specular", "target": [0, "filelist"]},
+          {"id": "detector_np", "target": [1, "nonparalyzing"]},
+          {"id": "detector_p", "target": [1, "paralyzing"]}
+        ],
+        "inputs": [],
+        "outputs": [
+          {"id": "output", "target": [4, "output"]}
+        ],
+        "modules": [
+          {
+            "module": "ncnr.refl.ncnr_load",
+            "title": "Ncnr Load (cached)",
+            "x": 10,
+            "y": 25
+          },
+          {
+            "module": "ncnr.refl.detector_dead_time",
+            "title": "Detector Dead Time",
+            "x": 360,
+            "y": 25
+          },
+          {
+            "module": "ncnr.refl.monitor_dead_time",
+            "title": "Monitor Dead Time",
+            "x": 565,
+            "y": 25
+          },
+          {
+            "module": "ncnr.refl.divergence",
+            "title": "Divergence",
+            "x": 215,
+            "y": 25
+          },
+          {
+            "module": "ncnr.refl.normalize",
+            "title": "Normalize",
+            "x": 765,
+            "y": 25
+          }
+        ],
+        "wires": [
+          {
+            "source": [
+              1,
+              "output"
+            ],
+            "target": [
+              2,
+              "data"
+            ]
+          },
+          {
+            "source": [
+              0,
+              "output"
+            ],
+            "target": [
+              3,
+              "data"
+            ]
+          },
+          {
+            "source": [
+              3,
+              "output"
+            ],
+            "target": [
+              1,
+              "data"
+            ]
+          },
+          {
+            "source": [
+              2,
+              "output"
+            ],
+            "target": [
+              4,
+              "data"
+            ]
+          }
+        ]
+      }
     },
     {
       "title": "load bg",
@@ -332,6 +434,7 @@ function expand_module_defs(modules, instrument) {
 }
 
 e = new dataflowEditor.editor();
+e._outer = []; // contexts for embedded templates;
 e.module_defs(instruments[current_instrument].modules);
 d3.select("#editor_div").call(e);
 
@@ -419,16 +522,19 @@ e.svg().on('contextmenu',function (d,i) {
             .style("top", d3.event.y + "px")
             .append("ul")
             
+            var active_template = e.svg().datum();
             var active_data = d3_target.datum();
+            var is_embedded = (active_data.module_def != null);
             var module_index = d3_target.node().parentNode.parentNode.getAttribute("index");
             var module_def = active_data.module_def || e.module_defs()[active_data.module];
             var fields = module_def.fields || [];
-            popup.append("li").text("configure").on("click", function() {
-              alert("implement configure");
-              d3.select(".popup").remove(); 
-              contextMenuShowing=false;
-            });
-            popup.append("hr");
+            //popup.append("li").text("configure").on("click", function() {
+            //  alert("implement configure");
+            //  d3.select(".popup").remove(); 
+            //  contextMenuShowing=false;
+            //});
+            //popup.append("hr");
+            
             popup.append("li").append("span").text("fields").style("font-weight", "bold")
             var expose_fields = popup.append("li").append("ul");
             var fields_list = expose_fields.selectAll("li").data(fields)
@@ -450,6 +556,16 @@ e.svg().on('contextmenu',function (d,i) {
               });
             popup.append("hr")
             var buttons = popup.append("li").style("text-align", "right")
+            if (is_embedded) {
+              buttons.append("button").text("explode").on("click", function() {
+                //e._outer.push(active_template);
+                var module = d3.select(d3_target.node().parentNode.parentNode);
+                explode(module, active_template, function() {e.import(module_def) });
+                d3.select(".popup").remove(); 
+                contextMenuShowing=false;
+              });
+              //popup.append("hr");
+            }
             buttons
               .append("button").text("dismiss")
                 .on("click", function() {
@@ -466,6 +582,7 @@ e.svg().on('contextmenu',function (d,i) {
                   e.update();
                   contextMenuShowing=false;
                 });
+            
         }
         else if ((d3_target.classed("input") || d3_target.classed("output")) && d3_target.classed("exposed")) {
             d3.event.preventDefault();
@@ -543,6 +660,146 @@ function check_exposed(module_index, fieldname) {
   })
   return (matching.length > 0)
 }
+
+highlightEmbedded = function() {
+  e.svg().selectAll(".module").filter(function(d) { return d.module_def == null })
+    .select("g.title rect.highlight").remove();
+  var embedded = e.svg().selectAll(".module").filter(function(d) { return d.module_def != null });
+  embedded.selectAll("g.title").each(function() {
+    var t = d3.select(this);
+    var b = t.select("rect.border");
+    var w = b.attr("width"); 
+    var h = b.attr("height");
+    if (t.select("rect.highlight").empty()) {
+      t.insert("rect", "rect.title")
+        .classed("border", true)
+        .classed("highlight", true)
+        .attr("width", w-6)
+        .attr("height", h-6)
+        .attr("x", 3)
+        .attr("y", 3)
+    }
+  })
+}
+
+highlightAll = function() {
+  var modules = e.svg().selectAll(".module");
+  e.svg().selectAll("g.module g.title").each(function() {
+    var t = d3.select(this);
+    var b = t.select("rect.border");
+    var w = b.attr("width"); 
+    var h = b.attr("height"); 
+    t.insert("rect", "rect.border")
+      .classed("border", true)
+      .classed("highlight", true)
+      .attr("width", w-6)
+      .attr("height", h-6)
+      .attr("x", 3)
+      .attr("y", 3)
+  })
+} 
+
+pathDataToString = function(pathData) {
+  var ps = ""
+  pathData.forEach(function(s,i) {
+    if (i > 0) { ps += " " }
+    ps += s.type;
+    ps += s.values.join(" ");
+  })
+  return ps;
+}
+
+explode = function(module, current_template, callback) {
+  var svg_width = e.svg().node().width.baseVal.value;
+  var svg_height = e.svg().node().height.baseVal.value;
+  var current_width = module.select("rect.title").attr("width");
+  var current_height = module.select("rect.title").attr("height");
+  var m_id = module.datum().module_id;
+  //var node = module.node();
+  //var m = node.cloneNode(true);
+  //var n = d3.select(node.parentNode.insertBefore(m, node.nextSibling));
+  //n.classed("module", false);
+  var cx = module.datum().x;
+  var cy = module.datum().y;
+  
+  e._outer.push({
+    "template": current_template,
+    "module_x": cx,
+    "module_y": cy,
+    "module_width": current_width,
+    "module_height": current_height
+  });
+    
+
+  var other_modules = e.svg().selectAll(".module").filter(function(d) { return d.module_id != m_id });
+  var rel_x = [], rel_y = [], radii = [];
+  other_modules.each(function(d,i) { 
+    var rx = d.x - cx;
+    var ry = d.y - cy;
+    radii[i] = Math.sqrt(Math.pow(rx, 2) + Math.pow(ry, 2));
+    rel_x[i] = rx;
+    rel_y[i] = ry;
+  })
+  var multiplier = svg_width / (Math.min.apply(Math, radii) || 1);
+  //var multiplier = 1.5;
+  
+  var wires = e.svg().selectAll(".wire,.exposed-wire");
+
+  wires.remove();
+  e.svg().selectAll("g.exposed-terminals").remove();
+  module.selectAll("rect.highlight").remove();
+  var border = module.select("rect.title.border");
+  var w = border.attr("width");
+  var titletext = module.select("text.title.text");
+  var outputs = module.select("g.terminals.outputs");
+  var output_width = 20; //parseInt(outputs.select("rect.terminal").attr("width"));
+  var d = 1000;
+  
+  module.transition().attr("transform", "translate(" + output_width + ",0)").duration(d);
+  border.transition().attr("width", svg_width - (output_width*2)).attr("height", svg_height-10).duration(d);
+  titletext.transition().attr("x", (svg_width - w)/2.0).duration(d);
+  outputs.transition().attr("transform", "translate(" + (svg_width - 2*output_width).toFixed() + ",0)").duration(d);
+  //other_modules.transition().style("opacity", "0").duration(d);
+  other_modules.transition().attr("transform", function(d,i) { 
+    return "translate(" + (cx + rel_x[i]*multiplier).toFixed() + "," + (cy + rel_y[i]*multiplier).toFixed() + ")"
+  }).duration(d)
+  .each("end", callback);
+  //wires.transition().style("opacity", "0").duration(d/2);
+  //wires.transition().attr("d", function(d,i) { return new_wirepaths[i] }).duration(d);
+  //module.selectAll(".title").classed("title", false).on("dragstart", null);
+}
+
+unexplode = function(stored_template, stored_x, stored_y) {
+  var d = 1000;
+  var to_restore = e._outer.pop();
+  var svg_width = e.svg().node().width.baseVal.value;
+  var svg_height = e.svg().node().height.baseVal.value;
+  var output_width = 20;
+  
+  var border = e.svg().append("rect")
+    .classed("unexplode", true)
+    .attr("width", svg_width - (output_width*2)).attr("height", svg_height-10)
+    .transition()
+      .attr("width", to_restore.module_width)
+      .attr("height", to_restore.module_height)
+      .attr("transform", "translate(" + to_restore.module_x + "," + to_restore.module_y + ")")
+      .duration(d)
+      .each("end", function() {e.import(to_restore.template); d3.select(this).remove()});
+  
+  e.svg().selectAll(".wire,.exposed-wire").remove()
+  //  .transition()
+  //  .style("opacity", 0)
+  //  .duration(d/4)
+  //  .each("end", function(){d3.select(this).remove()});
+    
+  e.svg().selectAll("g.module").transition()
+    .attr("transform", "translate(" + to_restore.module_x + "," + to_restore.module_y + ")")
+    .style("opacity", 0)
+    .duration(d/2)
+    
+}
+  
+    
   
 var module_defs = instruments[current_instrument].modules,
     module_names = (["Add new module:"]).concat(Object.keys(module_defs));
@@ -555,7 +812,7 @@ d3.select("#new_module").selectAll("option").data(module_names)
 d3.select('#new_module').on("change", function(ev) {
     var title = this.value,
         module = module_names[this.selectedIndex];
-    e.data()[0].modules.push({module: module, title: title});
+    e.svg().datum().modules.push({module: module, title: title});
     e.update();
     this.selectedIndex=0;
 });
@@ -579,6 +836,9 @@ e.dispatch.on("update", function() {
     }
     return title;
   });
+  //console.log("updating..");
+  highlightEmbedded();
+  d3.select("button#return_to_outer").style("visibility", (e._outer.length > 0) ? "visible" : "hidden");
 });
 
 function loadData() {
@@ -594,6 +854,7 @@ function loadData() {
 }
 
 d3.select("#upload_template").on("change", loadData);
+d3.select("button#return_to_outer").on("click", unexplode);
 
 }
 </script>
@@ -604,6 +865,7 @@ d3.select("#upload_template").on("change", loadData);
     <button id="show_example">Load example template</button>
     <input id="upload_template" type="file" multiple="false" name="upload_template" />
     <button id="show_value">Show data</button>
+    <button id="return_to_outer">Return to outer</button>
 </div>
 <div id="editor_div">
 </div>

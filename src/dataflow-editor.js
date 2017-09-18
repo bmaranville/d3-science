@@ -78,8 +78,7 @@ function editor(options) {
     return (check_end(w.source) && check_end(w.target))
   }
   
-  function rewire(index_updates) {
-    var wires = svg.datum().wires;
+  function rewire(index_updates, wires) {
     var end_names = ['source', 'target'];
     wires.forEach(function(w) {
       end_names.forEach(function(e) {
@@ -167,14 +166,16 @@ function editor(options) {
     }
     
     // moves endpoints when index shifts because of deletions below in the list of modules
-    rewire(index_updates);
+    var datum = svg.datum();
+    var wires = datum.wires || [];
+    rewire(index_updates, wires);
     reindex_exposed(index_updates, true);
     
-    var exposed_inputs_update = svg.selectAll("g.exposed-terminals .inputs").data(function(d) { return d.inputs || [] });
+    var exposed_inputs_update = svg.selectAll("g.exposed-terminals.inputs").data(function(d) { return d.inputs || [] });
     exposed_inputs_update.enter().append(exposed_input);
     exposed_inputs_update.exit().remove();
     
-    var exposed_outputs_update = svg.selectAll("g.exposed-terminals .outputs").data(function(d) { return d.outputs || [] });
+    var exposed_outputs_update = svg.selectAll("g.exposed-terminals.outputs").data(function(d) { return d.outputs || [] });
     exposed_outputs_update.enter().append(exposed_output);
     exposed_outputs_update.exit().remove();
     
@@ -301,12 +302,12 @@ function editor(options) {
   
   editor.import = function(datum) {
     // first the modules...
-    svg.datum({modules: [], wires: []});
-    svg.datum().modules = datum.modules;
+    var dc = extend(true, {}, datum);
+    svg.datum({modules: dc.modules, wires: []});
     // then renumber them...
     editor.update();
     // then import everything else...
-    extend(true, svg.datum(), datum);
+    extend(true, svg.datum(), dc);
     editor.update();
   }
   
@@ -579,13 +580,12 @@ function editor(options) {
     //var exposed_group = document.createElementNS("http://www.w3.org/2000/svg","g");
     
     var exposed_group = svg.append("g")
-      .classed("exposed-terminals wireable", true)
+      .classed("exposed-terminals wireable inputs", true)
       .datum(input_data)
       .attr("index", "-1")
       .attr("transform", "translate(0, " + (height * i).toFixed() + ")")
       
     exposed_group.append('g')
-      .classed('inputs', true)
       .append('rect')
         .classed("terminal", true)
         .classed("output", true)
@@ -608,13 +608,12 @@ function editor(options) {
     
     var svg_width = svg.node().width.baseVal.value;
     var exposed_group = svg.append("g")
-      .classed("exposed-terminals wireable", true)
+      .classed("exposed-terminals wireable outputs", true)
       .datum(output_data)
       .attr("index", "-1")
       .attr("transform", "translate(" + (svg_width - width).toFixed() + "," + (height * i).toFixed() + ")")
       
     exposed_group.append('g')
-      .classed('outputs', true)
       .append('rect')
         .classed("terminal", true)
         .classed("input", true)
