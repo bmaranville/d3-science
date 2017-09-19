@@ -20,6 +20,7 @@ svg {
 #editor_div { 
   width: 100%;
   padding-bottom: 8px;
+  position: relative;
   flex: 1;
 }
 .highlight {
@@ -276,7 +277,7 @@ e.container.on('contextmenu',function (d,i) {
               buttons.append("button").text("explode").on("click", function() {
                 //e._outer.push(active_template);
                 var module = d3.select(d3_target.node().parentNode.parentNode);
-                explode(module, active_template, function() {e.import(module_def) });
+                explode2(module, active_template, function() {e.import(module_def) });
                 d3.select(".popup").remove(); 
                 contextMenuShowing=false;
               });
@@ -427,50 +428,45 @@ pathDataToString = function(pathData) {
 
 explode2 = function(module, current_template, callback) {
   //transform="matrix(sx, 0, 0, sy, cx-sx*cx, cy-sy*cy)"
+  var module_def = module.datum().module_def || {};
   var svg_width = e.svg().node().width.baseVal.value;
   var svg_height = e.svg().node().height.baseVal.value;
   var current_width = module.select("rect.title").attr("width");
   var current_height = module.select("rect.title").attr("height");
   var m_id = module.datum().module_id;
-  var cx = module.datum().x;
-  var cy = module.datum().y;
+  var cx = module.datum().x + current_width/2.0;
+  var cy = module.datum().y + current_height/2.0;
   var d = 1000;
   
   var outer_svg = e.svg();
+  e._outer.push({
+    "template": current_template,
+    "svg": outer_svg,
+    "module_x": cx,
+    "module_y": cy,
+    "module_width": current_width,
+    "module_height": current_height
+  });
   
   outer_svg.style("transform-origin", cx + "px " + cy + "px");
-  module.select("text.title").style("display", "none");
-  var other_modules = outer_svg.selectAll(".module").filter(function(d) { return d.module_id != m_id });
-  var rel_x = [], rel_y = [], radii = [];
-  other_modules.each(function(d,i) { 
-    var rx = d.x - cx;
-    var ry = d.y - cy;
-    radii[i] = Math.sqrt(Math.pow(rx, 2) + Math.pow(ry, 2));
-    rel_x[i] = rx;
-    rel_y[i] = ry;
-  })
-  var multiplier = svg_width / (Math.min.apply(Math, radii) || 1);
+  //module.select("text.title").style("display", "none");
+  var multiplier = 3*svg_width / current_width;
   
   //var new_svg = document.createElement("svg");
-  var new_svg = outer_svg.append("svg")
+  var new_svg = e.container.append("svg")
     .attr("width", svg_width)
     .attr("height", svg_height)
-    .style("width", null)
-    .style("height", null)
-    .attr("x", cx)
-    .attr("y", cy)
-    //.attr("preserveAspectRatio", "none")
+    .style("left", 0)
+    .style("top", 0)
     .attr("transform", "scale(" + (1/multiplier) + "," + (1/multiplier) + ")")
-    //.attr("viewBox", "0 0 " + (svg_width/multiplier).toFixed(1) + " " + (svg_height/multiplier).toFixed(1));
-    .attr("viewBox", "0 0 " + svg_width.toFixed(1) + " " + svg_height.toFixed(1));
+    .style("transform-origin", cx + "px " + cy + "px")
+    .style("position", "absolute")
   e.svg(new_svg);
+  e.import(module_def)
   
-  //var transform = "matrix(" + multiplier + ", 0, 0, " + multiplier + ", " + (cx-multiplier*cx) + "," + (cy-multiplier*cy) + ")";
-  //var transform = "matrix(" + multiplier + ", 0, 0, " + multiplier + ", 0, 0)";
   var transform = "scale(" + multiplier + ", " + multiplier + ")";
-  console.log(transform);
-  outer_svg.transition().attr("transform", transform).duration(d)
-    .each("end", callback);
+  outer_svg.transition().attr("transform", transform).style("opacity", 0).ease("linear").duration(d).each("end", function() { console.log("exploding!", this); d3.select(this).style("display", "none")});
+  e.svg().transition().attr("transform", "scale(1,1)").ease("linear").duration(d);
 }
 
 explode = function(module, current_template, callback) {
@@ -560,6 +556,25 @@ unexplode = function(stored_template, stored_x, stored_y) {
     .duration(d/2)
     
 }
+
+unexplode2 = function(stored_template, stored_x, stored_y) {
+  var d = 1000;
+  var to_restore = e._outer.pop();
+  
+  var inner_svg = e.svg();
+  e.svg(to_restore.svg);
+  e.svg().style("display", "block")
+  console.log(e.svg().node().width.toString());
+  console.log(e.svg().node().width.baseVal.value);
+    //.selectAll("text.title").style("display", "block");
+  
+  console.log(e.svg().node().width.baseVal.value);
+  e.svg().transition().attr("transform", "scale(1,1)").style("opacity", 1).ease("linear").duration(d)
+    .each("end", function() {e.import(to_restore.template)});
+    //.each("end", function() {d3.select(this).selectAll("text.title").style("display", "block")});
+  inner_svg.transition().attr("transform", "scale(0.1, 0.1)").style("opacity", 0).ease("linear").duration(d).each("end", function() {d3.select(this).remove()});
+  console.log(e.svg().style("display"));  
+}
   
     
   
@@ -616,7 +631,7 @@ function loadData() {
 }
 
 d3.select("#upload_template").on("change", loadData);
-d3.select("button#return_to_outer").on("click", unexplode);
+d3.select("button#return_to_outer").on("click", unexplode2);
 
 }
 </script>
