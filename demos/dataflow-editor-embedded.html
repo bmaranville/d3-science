@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+html, body {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+svg {
+  width: 100%;
+  height: 100%;
+  float: left;
+  border-bottom: solid 1px #ccc;
+  border-right: solid 1px #ccc;
+  margin-right: -1px;
+  margin-bottom: -1px;
+}
+
+#editor_div { 
+  width: 100%;
+  padding-bottom: 8px;
+  position: relative;
+  flex: 1;
+}
+.active-wiring {
+  fill-opacity: 0.2 !important;
+}
+.popup {
+    position: absolute;
+    background-color: #fff;
+    /*width: 200px;*/
+    border: 1px #ccc solid;
+    border-radius: 6px;
+    box-shadow: #333 2px 2px 4px;
+    font-family: arial, helvetica, sans-serif;
+    margin: 5px 5px 2px 2px;
+}
+.popup ul {
+    padding: 5px;
+    list-style-type: none;
+    margin: 0;
+}
+
+.popup ul li {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-right: 0px;
+    margin-left: 0px;
+    cursor: pointer;
+}
+.popup ul li:hover {
+    /*background-color: LightGray;*/
+}
+
+.popup hr {
+    margin: 0;
+}
+
+.input.label, .output.label {
+    display: none;
+}
+
+/* styles for dataflow editor */
+
+g.exposed-terminals rect, g.module rect {
+  stroke-width: 2px;
+  stroke: blue;
+  cursor: move;
+  fill: white;
+}
+
+svg.editor g.module rect {
+  stroke-width: 2px;
+  stroke: blue;
+}
+
+svg.editor .highlight rect.title {
+  stroke-width: 5px;
+}
+
+rect.unexplode {
+  cursor: none;
+  fill: none;
+}
+
+g.module rect.title {
+  fill-opacity: 0;
+}
+
+g.module rect.border.embedded-indicator {
+  fill: none;
+  stroke: blue;
+  stroke-width: 2px;
+}
+
+g.module rect.terminal { 
+  cursor: crosshair;
+}
+
+rect.terminal.output, rect.terminal.exposed.input {
+  fill: #88FFFF;
+}
+
+rect.terminal.input, rect.terminal.exposed.output {
+  fill:  #88FF88;
+}
+
+path.wire, path.exposed-wire {
+  fill: none;
+  stroke-width: 9px;
+  stroke: red;
+  cursor: pointer;
+}
+
+path.exposed-wire {
+  stroke: blue;
+  stroke-opacity: 0.4;
+}
+
+polygon.terminal.state {
+  display: none;
+}
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="../lib/jquery-extend.js"></script>
+<!--<script src="dataflow-box-module.js"></script>-->
+<script src="../lib/dataflow-editor.js"></script>
+<script src="embedded_template_example.js"></script>
+<script src="ncnr.refl.module_defs.js"></script>
+<script>
+window.onload = function() {
+
+current_instrument = 'ncnr.refl';
+
+var x0 = 150,
+    y0 = 100, 
+    dx = 135,
+    dy = 40;
+
+
+
+function expand_module_defs(modules, instrument) {
+  var output = [],
+      module_defs = instruments[instrument].modules;
+  for (var i=0; i<modules.length; i++) {
+    var m = modules[i];
+    output[i] = m;
+    output[i].terminals = module_defs[m.module].terminals;
+    output[i].fields = module_defs[m.module].fields;
+  }
+  return output
+}
+
+e = new dataflowEditor.default(); //Class2.editorFactory();
+e._outer = []; // contexts for embedded templates;
+e._clipboard = null;
+e.module_defs(instruments[current_instrument].modules);
+d3.select("#editor_div").call(e);
+
+/********************************************************
+// brush stuff //
+var brush = d3.brush().on("end", brushended),
+  idleTimeout,
+  idleDelay = 350;
+
+e.svg().append("g")
+    .attr("class", "brush")
+    
+function idled() {
+  idleTimeout = null;
+}
+  
+function brushed(d,i) {
+  console.log('brushed', d, i, this);
+}
+function brushended(d, i) {
+  var s = d3.event.selection;
+  if (!s) {
+    if (!idleTimeout) return idleTimeout = setTimeout(idled, idleDelay);
+  } else {
+    var checker = insideChecker(s);
+    //console.log(s, e.svg().selectAll("g.module").filter(checker));
+    e.svg().selectAll("g.module").filter(checker).classed("highlight", true);
+    e.svg().select("g.brush").call(brush.move, null);
+  }
+}
+
+function insideChecker(s) {
+  var xmin = s[0][0],
+      ymin = s[0][1],
+      xmax = s[1][0],
+      ymax = s[1][1];
+      
+  var isInside = function(d,i) {
+    var ds = d3.select(this).select("rect.title");
+    var width = +ds.attr("width")
+    var height = +ds.attr("height")
+
+    var i = (
+      d.x >= xmin && 
+      d.x + width <= xmax &&
+      d.y >= ymin &&
+      d.y + height <= ymax
+    )
+    return i
+  }
+  return isInside
+}
+      
+
+function add_brush() {
+  e.svg().select("g.brush")
+    .call(brush)
+}
+// end brush stuff //
+****************************************************/
+
+var contextMenuShowing = false;
+
+e.dispatch.on("drag_module", function(module_data, dx, dy) {
+  var module = d3.select(this);
+  if (module.classed("highlight")) {
+    var other_modules = e.svg().selectAll("g.module.highlight")
+      .filter(function(d) { return d.module_id != module_data.module_id });
+      
+    other_modules
+      .each(function(d) { d.x += dx; d.y += dy })
+      .attr("transform", function(d) { 
+        return "translate(" + d.x.toFixed() + "," + d.y.toFixed() + ")"
+      })
+  }
+})
+
+e.container.on('click.multiselect', function(d,i) {
+  var d3_target = d3.select(d3.event.target);
+  if (contextMenuShowing) {
+      d3.event.preventDefault();
+      d3.select(".popup").remove();
+      contextMenuShowing = false;
+  }
+  if (d3_target.classed("title") && (d3.event.shiftKey || d3.event.ctrlKey)) {
+    d3.event.preventDefault();
+    d3.event.stopPropagation();
+    var module = d3.select(d3.event.target.parentNode.parentNode);
+    module.classed("highlight", !module.classed("highlight"))
+    return
+  }
+  else {
+    e.container.selectAll("g.module").classed("highlight", false);
+  }
+  
+  if (d3_target.classed("wire")) {
+    return
+  }
+})
+
+
+e.container.on('contextmenu',function (d,i) {
+    if (contextMenuShowing) {
+        d3.event.preventDefault();
+        d3.select(".popup").remove();
+        contextMenuShowing = false;
+    } else {
+        var d3_target = d3.select(d3.event.target);
+        var target_pos = [d3.event.x, d3.event.y];
+        var grandparent = d3.select(d3.event.target.parentNode.parentNode);
+
+        if (d3_target.classed("wire")) {
+            d3.event.preventDefault();
+            contextMenuShowing = true;
+
+            // Build the popup            
+            popup = d3.select("body")
+              .append("div")
+              .attr("class", "popup")
+              .style("left", d3.event.x + "px")
+              .style("top", d3.event.y + "px")
+            
+            var ul=popup.append("ul")
+            
+            ul.append("li").text("delete").on("click", function() {
+              var active_data = d3_target.datum();
+              var parentNode = d3_target.node().parentNode;
+              var wires = d3.select(parentNode).datum().wires;
+              for (var i=0; i<wires.length; i++) {
+                  var w = wires[i]; 
+                  if (w.source == active_data.source && w.target == active_data.target) {
+                      wires.splice(i,1);
+                      break;
+                  }
+              };
+              e.update();
+              popup.remove(); 
+              contextMenuShowing=false;
+            });
+            
+        }
+        else if (d3_target.classed("exposed-wire")) {
+            d3.event.preventDefault();
+            contextMenuShowing = true;
+
+            // Build the popup            
+            popup = d3.select("body")
+              .append("div")
+              .attr("class", "popup")
+              .style("left", d3.event.x + "px")
+              .style("top", d3.event.y + "px")
+            
+            var ul = popup.append("ul")
+            
+            ul.append("li").text("delete").on("click", function() {
+              var active_data = d3_target.datum();
+              if (active_data.source[0] == -1) {
+                e.svg().datum().inputs.forEach(function(f) { 
+                  if (f.id == active_data.source[1]) {
+                    f.target = null;
+                  }
+                });
+              }
+              if (active_data.target[0] == -1) {
+                e.svg().datum().outputs.forEach(function(f) { 
+                  if (f.id == active_data.target[1]) {
+                    f.target = null;
+                  }
+                });
+              }
+              e.update();
+              popup.remove(); 
+              contextMenuShowing=false;
+            });
+        }
+        else if (d3_target.classed("title")) {
+            d3.event.preventDefault();
+            var module = d3.select(d3_target.node().parentNode.parentNode);
+            if (module.classed("highlight")) {
+              contextMenuShowing = true;
+
+              // Build the popup            
+              var popup = d3.select("body")
+                .append("div")
+                .attr("class", "popup")
+                .style("left", d3.event.x + "px")
+                .style("top", d3.event.y + "px")
+              
+              var ul = popup.append("ul");
+              
+              var copy = function() {
+                popup.remove();
+                var datum = e.svg().datum();
+                var modules_to_copy = []; 
+                var module_index_lookup = {};
+                e.svg().selectAll("g.module.highlight").each(function(d,i) {
+                  modules_to_copy.push(d);
+                  var old_index = this.getAttribute("index");
+                  module_index_lookup[old_index] = i;
+                });
+                modules_to_copy = jqueryExtend.extend(true, [], modules_to_copy);
+                var wires_to_copy = [];
+                datum.wires.forEach(function(w,i) { 
+                  var ks = w.source[0].toString(),
+                      kt = w.target[0].toString();
+                  if (ks in module_index_lookup && kt in module_index_lookup) {
+                    var new_wire = jqueryExtend.extend(true, {}, w);
+                    new_wire.source[0] = module_index_lookup[ks];
+                    new_wire.target[0] = module_index_lookup[kt];
+                    wires_to_copy.push(new_wire);
+                  }
+                });
+                modules_to_copy.forEach(function(d) { delete d.module_id });
+                var content = {"modules": modules_to_copy, "wires": wires_to_copy}
+                e._clipboard = {reference_pos: target_pos, content: content};
+                e.update();
+                contextMenuShowing=false;
+              }
+              
+              var cut = function() {
+                copy();
+                var to_cut = [];
+                e.svg().selectAll("g.module.highlight").each(function(d,i) {
+                  to_cut.push(d.module_id);
+                });
+                e._clipboard.to_cut = to_cut;
+              }
+              
+              var buttons = ul.append("li").style("text-align", "right")
+              buttons
+                .append("button").text("cut").on("click", cut);
+              buttons
+                .append("button").text("copy").on("click", copy);
+              buttons
+                .append("button").text("delete modules")
+                  .on("click", function() {
+                    var modules = e.svg().datum().modules || [];
+                    e.svg().selectAll("g.module.highlight").each(function(d) { 
+                      modules = modules.filter(function(m) { return m.module_id != d.module_id });
+                    })
+                    e.svg().datum().modules = modules;
+                    popup.remove(); 
+                    e.update();
+                    contextMenuShowing=false;
+                  });
+            }
+            else {
+              contextMenuShowing = true;
+
+              // Build the popup            
+              popup = d3.select("body")
+                .append("div")
+                .attr("class", "popup")
+                .style("left", d3.event.x + "px")
+                .style("top", d3.event.y + "px")
+              
+              var ul = popup.append("ul")
+              
+              var active_template = e.svg().datum();
+              var exposed_fields = active_template.fields || [];
+              var active_data = d3_target.datum();
+              var is_embedded = (active_data.module_def != null);
+              var module_index = d3_target.node().parentNode.parentNode.getAttribute("index");
+              var module_def = active_data.module_def || e.module_defs()[active_data.module];
+              var fields = module_def.fields || [];
+              //popup.append("li").text("configure").on("click", function() {
+              //  alert("implement configure");
+              //  d3.select(".popup").remove(); 
+              //  contextMenuShowing=false;
+              //});
+              //popup.append("hr");
+              
+              ul.append("li").append("span").text("fields").style("font-weight", "bold")
+              var expose_fields = ul.append("li").append("ul");
+              var fields_list = expose_fields.selectAll("li").data(fields)
+                .enter().append("li")
+              fields_list.append("span")
+                  .text(function(d) { return d.id + " exposed as: " })
+              fields_list.append("input")
+                .attr("type", "text")
+                .classed("exposed_as", true)
+                .attr("value", function(d) { 
+                  var match = exposed_fields.find(function(f) { return f.target[0] == module_index && f.target[1] == d.id });
+                  return (match) ? match.id : d.id;
+                })
+                .attr("size", "10")
+              fields_list.append("input")
+                .attr("type", "checkbox")
+                .property("checked", function(d) { return check_exposed(module_index, d.id) })
+                .on("change", function(d) {
+                  var exposed_as = d3.select(this.parentNode).select("input.exposed_as").node().value;
+                  var success = set_field(this.checked, module_index, d.id, exposed_as);
+                  if (!success) { this.checked = false }
+                });
+              ul.append("hr")
+              var buttons = ul.append("li").style("text-align", "right")
+              if (is_embedded) {
+                buttons.append("button").text("explode").on("click", function() {
+                  //e._outer.push(active_template);
+                  var module = d3.select(d3_target.node().parentNode.parentNode);
+                  explode2(module, active_template, function() {e.import(module_def) });
+                  popup.remove(); 
+                  contextMenuShowing=false;
+                });
+                //popup.append("hr");
+              }
+              buttons
+                .append("button").text("dismiss")
+                  .on("click", function() {
+                    popup.remove(); 
+                    e.update();
+                    contextMenuShowing=false;
+                  });
+              buttons
+                .append("button").text("delete module")
+                  .on("click", function() {
+                    var module_id = d3_target.datum().module_id;
+                    e.svg().datum().modules = e.svg().datum().modules.filter(function(d) { return d.module_id != module_id});
+                    popup.remove(); 
+                    e.update();
+                    contextMenuShowing=false;
+                  });
+            }
+        }
+        else if ((d3_target.classed("input") || d3_target.classed("output")) && d3_target.classed("exposed")) {
+            d3.event.preventDefault();
+            contextMenuShowing = true;
+            
+            // Build the popup            
+            popup = d3.select("body")
+              .append("div")
+              .attr("class", "popup")
+              .style("left", d3.event.x + "px")
+              .style("top", d3.event.y + "px")
+              
+            var ul = popup.append("ul");
+            
+            var side = d3_target.classed("output") ? "inputs" : "outputs";
+            ul.append("li").text("delete").on("click", function() {
+                var term_id = grandparent.datum().id;
+                e.svg().datum()[side] = e.svg().datum()[side].filter(function(d) { 
+                  return d.id != term_id
+                });
+                popup.remove(); 
+                e.update();
+                contextMenuShowing=false;
+            });
+
+        }
+        else if (e._clipboard != null) {
+          d3.event.preventDefault();
+          contextMenuShowing = true;
+          
+          var to_paste = jqueryExtend.extend(true, {}, e._clipboard.content);
+          var rx = e._clipboard.reference_pos[0];
+          var ry = e._clipboard.reference_pos[1];
+          
+          
+          
+          // Build the popup            
+          popup = d3.select("body")
+            .append("div")
+            .attr("class", "popup")
+            .style("left", d3.event.x + "px")
+            .style("top", d3.event.y + "px")
+          
+          var ul = popup.append("ul")
+          
+          ul.append("li").text("paste").on("click", function() {
+              popup.remove();
+              
+              var datum = e.svg().datum();
+              if (e._clipboard.to_cut) {
+                var modules = datum.modules || [];
+                modules = modules.filter(function(m) { return (e._clipboard.to_cut.indexOf(m.module_id) < 0) });
+                datum.modules = modules;
+                e.update();
+                e._clipboard.to_cut = null;
+              }
+              
+              var start_module_index = (datum.modules || []).length;
+              
+              to_paste.modules.forEach(function(m) {
+                m.x += d3.event.x - rx;
+                m.y += d3.event.y - ry;
+              });
+              
+              to_paste.wires.forEach(function(w) {
+                w.source[0] += start_module_index;
+                w.target[0] += start_module_index;
+              })
+              
+              e.svg().selectAll("g.module.highlight").classed("highlight", false);              
+              datum.modules.push.apply(datum.modules, to_paste.modules);
+              e.update();
+              datum.wires.push.apply(datum.wires, to_paste.wires)
+              e.update();
+              e.svg().selectAll("g.module").filter(function(d,i) { return i >= start_module_index }).classed("highlight", true);
+              contextMenuShowing=false;
+          });
+        }
+          
+                     
+    }
+})
+
+function set_field(enabled, module_index, fieldname, exposed_name) {
+  if (enabled) {
+    return expose_field(module_index, fieldname, exposed_name)
+  }
+  else {
+    return unexpose_field(module_index, fieldname, exposed_name)
+  }
+}
+
+function expose_field(module_index, fieldname, exposed_name) {
+  var data = e.svg().datum();
+  // check if this exposed name already exists:
+  data.fields = data.fields || [];
+  var existing_names = data.fields.map(function(f) { return f.id });
+  if (existing_names.indexOf(exposed_name) > -1) {
+    alert("this name is already used");
+    return false
+  }
+  data.fields.push({
+    "id": exposed_name,
+    "target": [parseInt(module_index), fieldname]
+  });
+  return true
+}
+
+function unexpose_field(module_index, fieldname) {
+  var data = e.svg().datum();
+  data.fields = data.fields || [];
+  data.fields = data.fields.filter(function(f) { 
+    return !(f.target && f.target[0] == parseInt(module_index) && f.target[1] == fieldname)
+  });
+  return true
+}
+
+function check_exposed(module_index, fieldname) { 
+  var data = e.svg().datum();
+  var fields = data.fields || [];
+  var matching = fields.filter(function(f) { 
+    return (f.target && f.target[0] == parseInt(module_index) && f.target[1] == fieldname)
+  })
+  return (matching.length > 0)
+}
+
+highlightEmbedded = function() {
+  e.svg().selectAll(".module").filter(function(d) { return d.module_def == null })
+    .select("g.title rect.embedded-indicator").remove();
+  var embedded = e.svg().selectAll(".module").filter(function(d) { return d.module_def != null });
+  embedded.selectAll("g.title").each(function() {
+    var t = d3.select(this);
+    var b = t.select("rect.border");
+    var w = b.attr("width"); 
+    var h = b.attr("height");
+    if (t.select("rect.embedded-indicator").empty()) {
+      t.insert("rect", "rect.title")
+        .classed("border", true)
+        .classed("embedded-indicator", true)
+        .attr("width", w-6)
+        .attr("height", h-6)
+        .attr("x", 3)
+        .attr("y", 3)
+    }
+    //if (t.select("image.icon").empty()) {
+      //t.insert("image", "rect.title")
+        //.classed("icon", true)
+        //.attr("href", "css/expand-icon.svg")
+        //.attr("x", w-12)
+        //.attr("y", 2)
+        //.attr("width", 10)
+        //.attr("height", 10) 
+    //}
+  })
+}
+
+highlightAll = function() {
+  var modules = e.svg().selectAll(".module");
+  e.svg().selectAll("g.module g.title").each(function() {
+    var t = d3.select(this);
+    var b = t.select("rect.border");
+    var w = b.attr("width"); 
+    var h = b.attr("height"); 
+    t.insert("rect", "rect.border")
+      .classed("border", true)
+      .classed("highlight", true)
+      .attr("width", w-6)
+      .attr("height", h-6)
+      .attr("x", 3)
+      .attr("y", 3)
+  })
+} 
+
+pathDataToString = function(pathData) {
+  var ps = ""
+  pathData.forEach(function(s,i) {
+    if (i > 0) { ps += " " }
+    ps += s.type;
+    ps += s.values.join(" ");
+  })
+  return ps;
+}
+
+explode2 = function(module, current_template, callback) {
+  //transform="matrix(sx, 0, 0, sy, cx-sx*cx, cy-sy*cy)"
+  var module_def = module.datum().module_def || {};
+  var svg_width = e.svg().node().width.baseVal.value;
+  var svg_height = e.svg().node().height.baseVal.value;
+  var current_width = module.select("rect.title").attr("width");
+  var current_height = module.select("rect.title").attr("height");
+  var m_id = module.datum().module_id;
+  var cx = module.datum().x + current_width/2.0;
+  var cy = module.datum().y + current_height/2.0;
+  var d = 1000;
+  
+  var outer_svg = e.svg();
+  e._outer.push({
+    "template": current_template,
+    "svg": outer_svg,
+    "module_x": cx,
+    "module_y": cy,
+    "module_width": current_width,
+    "module_height": current_height
+  });
+  
+  outer_svg.style("transform-origin", cx + "px " + cy + "px");
+  //module.select("text.title").style("display", "none");
+  var multiplier = 3*svg_width / current_width;
+  
+  //var new_svg = document.createElement("svg");
+  var new_svg = e.container.append("svg")
+    .attr("class", "editor")
+    .attr("width", svg_width)
+    .attr("height", svg_height)
+    .style("left", 0)
+    .style("top", 0)
+    .attr("transform", "scale(" + (1/multiplier) + "," + (1/multiplier) + ")")
+    .style("transform-origin", cx + "px " + cy + "px")
+    .style("position", "absolute")
+  new_svg.append("g").attr("class", "brush");
+  e.svg(new_svg);
+  e.import(module_def)
+  
+  var tr = d3.transition()
+    .duration(d)
+    .ease(d3.easeLinear);
+    
+  var transform = "scale(" + multiplier + ", " + multiplier + ")";
+  outer_svg.transition(tr).attr("transform", transform).style("opacity", 0).on("end", function() { d3.select(this).style("display", "none")});
+  e.svg().transition(tr).attr("transform", "scale(1,1)")
+  add_brush();
+}
+
+explode = function(module, current_template, callback) {
+  var svg_width = e.svg().node().width.baseVal.value;
+  var svg_height = e.svg().node().height.baseVal.value;
+  var current_width = module.select("rect.title").attr("width");
+  var current_height = module.select("rect.title").attr("height");
+  var m_id = module.datum().module_id;
+  //var node = module.node();
+  //var m = node.cloneNode(true);
+  //var n = d3.select(node.parentNode.insertBefore(m, node.nextSibling));
+  //n.classed("module", false);
+  var cx = module.datum().x;
+  var cy = module.datum().y;
+  
+  e._outer.push({
+    "template": current_template,
+    "module_x": cx,
+    "module_y": cy,
+    "module_width": current_width,
+    "module_height": current_height
+  });
+    
+
+  var other_modules = e.svg().selectAll(".module").filter(function(d) { return d.module_id != m_id });
+  var rel_x = [], rel_y = [], radii = [];
+  other_modules.each(function(d,i) { 
+    var rx = d.x - cx;
+    var ry = d.y - cy;
+    radii[i] = Math.sqrt(Math.pow(rx, 2) + Math.pow(ry, 2));
+    rel_x[i] = rx;
+    rel_y[i] = ry;
+  })
+  var multiplier = svg_width / (Math.min.apply(Math, radii) || 1);
+  
+  var wires = e.svg().selectAll(".wire,.exposed-wire");
+
+  wires.remove();
+  e.svg().selectAll("g.exposed-terminals").remove();
+  module.selectAll("rect.highlight").remove();
+  var border = module.select("rect.title.border");
+  var w = border.attr("width");
+  var titletext = module.select("text.title.text");
+  var outputs = module.select("g.terminals.outputs");
+  var output_width = 20; //parseInt(outputs.select("rect.terminal").attr("width"));
+  var d = 1000;
+  
+  
+  titletext.transition().attr("x", (svg_width - w)/2.0).duration(d);
+  outputs.transition().attr("transform", "translate(" + (svg_width - 2*output_width).toFixed() + ",0)").duration(d);
+  //other_modules.transition().style("opacity", "0").duration(d);
+  other_modules.transition().attr("transform", function(d,i) { 
+    return "translate(" + (cx + rel_x[i]*multiplier).toFixed() + "," + (cy + rel_y[i]*multiplier).toFixed() + ")"
+  }).duration(d)
+  
+  module.transition().attr("transform", "translate(" + output_width.toFixed() + ",0)").duration(d);
+  border.transition().attr("width", svg_width - (output_width*2)).attr("height", svg_height-10).duration(d)
+    .each("end", callback);
+}
+
+unexplode = function(stored_template, stored_x, stored_y) {
+  var d = 1000;
+  var to_restore = e._outer.pop();
+  var svg_width = e.svg().node().width.baseVal.value;
+  var svg_height = e.svg().node().height.baseVal.value;
+  var output_width = 20;
+  
+  var tr = d3.transition()
+    .duration(d)
+    .ease(d3.easeLinear);
+  
+  var border = e.svg().append("rect")
+    .classed("unexplode", true)
+    .attr("width", svg_width - (output_width*2)).attr("height", svg_height-10)
+    .transition(tr)
+      .attr("width", to_restore.module_width)
+      .attr("height", to_restore.module_height)
+      .attr("transform", "translate(" + to_restore.module_x + "," + to_restore.module_y + ")")
+      .on("end", function() {e.import(to_restore.template); d3.select(this).remove()});
+  
+  e.svg().selectAll(".wire,.exposed-wire").remove()
+  //  .transition()
+  //  .style("opacity", 0)
+  //  .duration(d/4)
+  //  .each("end", function(){d3.select(this).remove()});
+    
+  e.svg().selectAll("g.module").transition()
+    .attr("transform", "translate(" + to_restore.module_x + "," + to_restore.module_y + ")")
+    .style("opacity", 0)
+    .duration(d/2)
+    
+}
+
+unexplode2 = function(stored_template, stored_x, stored_y) {
+  var d = 1000;
+  var to_restore = e._outer.pop();
+  
+  var inner_svg = e.svg();
+  e.svg(to_restore.svg);
+  e.svg().style("display", "block")
+  
+  var tr = d3.transition()
+    .duration(d)
+    .ease(d3.easeLinear);
+  
+  e.svg().transition(tr).attr("transform", "scale(1,1)").style("opacity", 1)
+    .on("end", function() {e.import(to_restore.template)});
+    //.each("end", function() {d3.select(this).selectAll("text.title").style("display", "block")});
+  inner_svg.transition(tr).attr("transform", "scale(0.1, 0.1)").style("opacity", 0).remove();
+}
+  
+    
+  
+var module_defs = instruments[current_instrument].modules,
+    module_names = (["Add new module:"]).concat(Object.keys(module_defs));
+    
+d3.select("#new_module").selectAll("option").data(module_names)
+  .enter().append('option')
+  .attr("module", function(d) {return d}) // function(d) {return module_defs[d].module})
+  .text(function(d) {return module_defs[d].name})  
+  
+d3.select('#new_module').on("change", function(ev) {
+    var title = this.value,
+        module = module_names[this.selectedIndex];
+    e.svg().datum().modules.push({module: module, title: title, x: 50, y:10});
+    e.update();
+    this.selectedIndex=0;
+});
+
+d3.select("#show_value").on("click", function() { 
+  var win = window.open();
+  win.document.write("<pre>" + JSON.stringify(e.export(), null, 2) + "</pre>");
+});
+
+d3.select("#show_example").on("click", function() {
+  e._outer = [];
+  e.import(embedded_template_example, true);
+  //add_brush();
+});
+
+e.dispatch.on("update", function() { 
+  var datum = e.svg().datum();
+  var fields = datum.fields || [];
+  e.svg().selectAll("g.module g.title text").text(function(d,i) { 
+    var title = d.title;
+    if (fields.filter(function(f) { return f.target[0] == i }).length > 0) {
+      title += "*";
+    }
+    return title;
+  });
+  //console.log("updating..");
+  highlightEmbedded();
+  d3.select("button#return_to_outer").style("visibility", (e._outer.length > 0) ? "visible" : "hidden");
+});
+
+function loadData() {
+    var file = document.getElementById('upload_template').files[0]; // only one file allowed
+    datafilename = file.name;
+    var result = null;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+        var template = JSON.parse(this.result);
+        e.import(template);
+    }
+    reader.readAsText(file);
+}
+
+d3.select("#upload_template").on("change", loadData);
+d3.select("button#return_to_outer").on("click", unexplode2);
+
+}
+</script>
+<div id="controls">
+    <select id="new_module">
+      <option>Add new module:</option>
+    </select>
+    <button id="show_example">Load example template</button>
+    <input id="upload_template" type="file" multiple="false" name="upload_template" />
+    <button id="show_value">Show data</button>
+    <button id="return_to_outer">Return to outer</button>
+</div>
+<div id="editor_div">
+</div>
+</body>
