@@ -27,7 +27,7 @@ function rectangleInteractor(state, x, y) {
          
   var state_to_pairs = function(state) {
     // convert from xmin, xmax... to pairs of points for rectangle
-    if (show_lines) {
+    if (state.show_lines) {
       return [
         [[state.xmin, state.ymin], [state.xmax, state.ymin]],
         [[state.xmax, state.ymin], [state.xmax, state.ymax]],
@@ -41,7 +41,7 @@ function rectangleInteractor(state, x, y) {
   }
   
   var state_to_points = function(state) {
-    if (show_points) {
+    if (state.show_points) {
       return [
         [state.xmin, state.ymin],
         [state.xmax, state.ymin],
